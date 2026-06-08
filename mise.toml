@@ -1,0 +1,40 @@
+[tools]
+python = "latest"
+uv = "latest"
+
+[env]
+VIRTUAL_ENV = "{{config_root}}/.venv"
+
+[tasks.check]
+description = "Run all checks: lint, type-check, and test."
+depends = ["lint", "typecheck", "test"]
+
+[tasks.lint]
+description = "Run linting and format checking."
+run = [
+  "uv run --group dev ruff check src/ tests/",
+  "uv run --group dev ruff format --check src/ tests/",
+]
+
+[tasks.fmt]
+description = "Auto-fix lint findings, then format."
+run = [
+  "uv run --group dev ruff check --fix src/ tests/",
+  "uv run --group dev ruff format src/ tests/",
+]
+
+[tasks.typecheck]
+description = "Run type checking."
+run = "uv run --group dev mypy src/"
+
+[tasks.test]
+description = "Run tests."
+run = "uv run --group dev pytest tests/"
+
+[tasks.docs]
+description = "Build documentation."
+run = "uv run --group docs mkdocs build"
+
+[tasks."docs:serve"]
+description = "Serve documentation locally with live reload."
+run = "uv run --group docs mkdocs serve"
