@@ -7,11 +7,13 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import json as _schema_json  # noqa: F401
 
 
-class SystemInfo(pydantic.BaseModel):
+class SystemInfo(_sidex.Model):
     """System information."""
 
     model_config = pydantic.ConfigDict(
@@ -42,17 +44,17 @@ class SystemInfo(pydantic.BaseModel):
     )
 
 
-class MemoryInfo(pydantic.BaseModel):
+class MemoryInfo(_sidex.Model):
     """Memory information."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    total: int = pydantic.Field(description="Total memory in bytes.")
+    total: _sidex.U64 = pydantic.Field(description="Total memory in bytes.")
 
 
-class NetworkInterfaceInfo(pydantic.BaseModel):
+class NetworkInterfaceInfo(_sidex.Model):
     """Network interface information."""
 
     model_config = pydantic.ConfigDict(
@@ -72,7 +74,7 @@ class NetworkInterfaceInfo(pydantic.BaseModel):
     )
 
 
-class DiskInfo(pydantic.BaseModel):
+class DiskInfo(_sidex.Model):
     """Disk information."""
 
     model_config = pydantic.ConfigDict(
@@ -86,19 +88,19 @@ class DiskInfo(pydantic.BaseModel):
         validation_alias="mountPoint",
         serialization_alias="mountPoint",
     )
-    total_space: int = pydantic.Field(
+    total_space: _sidex.U64 = pydantic.Field(
         description="Total disk space in bytes.",
         validation_alias="totalSpace",
         serialization_alias="totalSpace",
     )
-    available_space: int = pydantic.Field(
+    available_space: _sidex.U64 = pydantic.Field(
         description="Available disk space in bytes.",
         validation_alias="availableSpace",
         serialization_alias="availableSpace",
     )
 
 
-class OtaUpdateStatus(pydantic.BaseModel):
+class OtaUpdateStatus(_sidex.Model):
     """**Unstable (feature `ota_updates`).**
 
     OTA update status (`dev.nexigon.ota.status`).
@@ -129,7 +131,7 @@ class OtaUpdateStatus(pydantic.BaseModel):
         validation_alias="targetVersion",
         serialization_alias="targetVersion",
     )
-    failure_count: int | None = pydantic.Field(
+    failure_count: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Number of consecutive failed update attempts for the current target.\nReset to zero when the config changes or an update succeeds.",
         validation_alias="failureCount",
@@ -143,7 +145,7 @@ class OtaUpdateStatus(pydantic.BaseModel):
     )
 
 
-class OtaUpdateConfig(pydantic.BaseModel):
+class OtaUpdateConfig(_sidex.Model):
     """**Unstable (feature `ota_updates`).**
 
     OTA update configuration identifying the update source.
@@ -162,7 +164,7 @@ class OtaUpdateConfig(pydantic.BaseModel):
     )
 
 
-class DeviceHealth(pydantic.BaseModel):
+class DeviceHealth(_sidex.Model):
     """Device health information (`dev.nexigon.system.health`)."""
 
     model_config = pydantic.ConfigDict(
@@ -174,7 +176,7 @@ class DeviceHealth(pydantic.BaseModel):
     )
 
 
-class HttpExportInfo(pydantic.BaseModel):
+class HttpExportInfo(_sidex.Model):
     """HTTP export information."""
 
     model_config = pydantic.ConfigDict(
@@ -182,11 +184,11 @@ class HttpExportInfo(pydantic.BaseModel):
     )
 
     name: str = pydantic.Field(description="Name of the export.")
-    port: int = pydantic.Field(description="Port the service listens on.")
+    port: _sidex.U16 = pydantic.Field(description="Port the service listens on.")
     path: str | None = pydantic.Field(default=None, description="URL path prefix.")
 
 
-class RugixSystemInfo(pydantic.BaseModel):
+class RugixSystemInfo(_sidex.Model):
     """Rugix-specific system information."""
 
     model_config = pydantic.ConfigDict(
@@ -208,21 +210,21 @@ class RugixSystemInfo(pydantic.BaseModel):
     )
 
 
-class RugixSlotInfo(pydantic.BaseModel):
+class RugixSlotInfo(_sidex.Model):
     """Information about a Rugix update slot."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    active: bool | None = pydantic.Field(
+    active: _sidex.Bool | None = pydantic.Field(
         default=None, description="Indicates whether the slot is active, i.e., in use."
     )
     hashes: dict[str, str] | None = pydantic.Field(
         default=None,
         description="Hashes of the slot data according to the slot database.",
     )
-    size: int | None = pydantic.Field(
+    size: _sidex.U64 | None = pydantic.Field(
         default=None,
         description="Size of the slot data according to the slot database.",
     )
@@ -234,7 +236,7 @@ class RugixSlotInfo(pydantic.BaseModel):
     )
 
 
-class RugixBootInfo(pydantic.BaseModel):
+class RugixBootInfo(_sidex.Model):
     """Rugix-specific boot information."""
 
     model_config = pydantic.ConfigDict(
@@ -263,7 +265,7 @@ class RugixBootInfo(pydantic.BaseModel):
     )
 
 
-class RugixBootGroupInfo(pydantic.BaseModel):
+class RugixBootGroupInfo(_sidex.Model):
     """Information about a Rugix boot group."""
 
     model_config = pydantic.ConfigDict(
@@ -271,7 +273,7 @@ class RugixBootGroupInfo(pydantic.BaseModel):
     )
 
 
-class RugixActiveStateManagementInfo(pydantic.BaseModel):
+class RugixActiveStateManagementInfo(_sidex.Model):
     """Information about the state management mechanism, if state management is active."""
 
     model_config = pydantic.ConfigDict(
@@ -286,7 +288,7 @@ class RugixActiveStateManagementInfo(pydantic.BaseModel):
     )
 
 
-class RugixBakeryBuildInfo(pydantic.BaseModel):
+class RugixBakeryBuildInfo(_sidex.Model):
     """Rugix Bakery build information."""
 
     model_config = pydantic.ConfigDict(
@@ -299,7 +301,7 @@ class RugixBakeryBuildInfo(pydantic.BaseModel):
     )
 
 
-class RugixBakeryReleaseInfo(pydantic.BaseModel):
+class RugixBakeryReleaseInfo(_sidex.Model):
     """Rugix Bakery build release information."""
 
     model_config = pydantic.ConfigDict(
@@ -310,7 +312,7 @@ class RugixBakeryReleaseInfo(pydantic.BaseModel):
     version: str = pydantic.Field(description="Release version.")
 
 
-class YoctoSystemInfo(pydantic.BaseModel):
+class YoctoSystemInfo(_sidex.Model):
     """Yocto-specific system information."""
 
     model_config = pydantic.ConfigDict(
@@ -324,7 +326,7 @@ class YoctoSystemInfo(pydantic.BaseModel):
     )
 
 
-class AgentInfo(pydantic.BaseModel):
+class AgentInfo(_sidex.Model):
     """Agent information."""
 
     model_config = pydantic.ConfigDict(
@@ -335,7 +337,7 @@ class AgentInfo(pydantic.BaseModel):
     config: AgentConfig = pydantic.Field(description="Agent feature configuration.")
 
 
-class AgentConfig(pydantic.BaseModel):
+class AgentConfig(_sidex.Model):
     """Agent feature configuration."""
 
     model_config = pydantic.ConfigDict(
@@ -350,14 +352,14 @@ class AgentConfig(pydantic.BaseModel):
     )
 
 
-class AgentTerminalConfig(pydantic.BaseModel):
+class AgentTerminalConfig(_sidex.Model):
     """Agent terminal feature configuration."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    enabled: bool | None = pydantic.Field(
+    enabled: _sidex.Bool | None = pydantic.Field(
         default=None, description="Whether the remote terminal is enabled."
     )
     users: list[str] | None = pydantic.Field(
@@ -365,19 +367,19 @@ class AgentTerminalConfig(pydantic.BaseModel):
     )
 
 
-class AgentCommandsConfig(pydantic.BaseModel):
+class AgentCommandsConfig(_sidex.Model):
     """Agent commands feature configuration."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    enabled: bool | None = pydantic.Field(
+    enabled: _sidex.Bool | None = pydantic.Field(
         default=None, description="Whether on-demand commands are enabled."
     )
 
 
-class DeviceCommandManifest(pydantic.BaseModel):
+class DeviceCommandManifest(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Command manifest (`dev.nexigon.commands` property)."""
@@ -391,7 +393,7 @@ class DeviceCommandManifest(pydantic.BaseModel):
     )
 
 
-class DeviceCommandDescriptor(pydantic.BaseModel):
+class DeviceCommandDescriptor(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Descriptor for an on-demand command."""
@@ -486,14 +488,14 @@ type DeviceHealthStatus = (
 )
 
 
-class ExportInfo_Http(pydantic.BaseModel):
+class ExportInfo_Http(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
     protocol: Literal["http"] = "http"
     name: str = pydantic.Field(description="Name of the export.")
-    port: int = pydantic.Field(description="Port the service listens on.")
+    port: _sidex.U16 = pydantic.Field(description="Port the service listens on.")
     path: str | None = pydantic.Field(default=None, description="URL path prefix.")
 
     def payload(self) -> "HttpExportInfo":
@@ -504,7 +506,7 @@ class ExportInfo_Http(pydantic.BaseModel):
 type ExportInfo = ExportInfo_Http
 
 
-class RugixStateManagementInfo_Disabled(pydantic.BaseModel):
+class RugixStateManagementInfo_Disabled(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -512,7 +514,7 @@ class RugixStateManagementInfo_Disabled(pydantic.BaseModel):
     status: Literal["Disabled"] = "Disabled"
 
 
-class RugixStateManagementInfo_Active(pydantic.BaseModel):
+class RugixStateManagementInfo_Active(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -529,7 +531,7 @@ class RugixStateManagementInfo_Active(pydantic.BaseModel):
         return RugixActiveStateManagementInfo(data_partition=self.data_partition)
 
 
-class RugixStateManagementInfo_Error(pydantic.BaseModel):
+class RugixStateManagementInfo_Error(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )

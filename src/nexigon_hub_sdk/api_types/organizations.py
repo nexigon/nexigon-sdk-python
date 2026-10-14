@@ -7,8 +7,11 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import audit as _schema_audit  # noqa: F401
+    from . import pagination as _schema_pagination  # noqa: F401
     from . import projects as _schema_projects  # noqa: F401
     from . import repositories as _schema_repositories  # noqa: F401
     from . import users as _schema_users  # noqa: F401
@@ -44,7 +47,7 @@ class OrganizationApiTokenId(str):
         return handler(str)
 
 
-class QueryOrganizationsAction(pydantic.BaseModel):
+class QueryOrganizationsAction(_sidex.Model):
     """Query the organizations of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -52,7 +55,7 @@ class QueryOrganizationsAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationsOutput(pydantic.BaseModel):
+class QueryOrganizationsOutput(_sidex.Model):
     """Output of querying the organizations of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -64,7 +67,7 @@ class QueryOrganizationsOutput(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationsItem(pydantic.BaseModel):
+class QueryOrganizationsItem(_sidex.Model):
     """Organization item."""
 
     model_config = pydantic.ConfigDict(
@@ -79,7 +82,7 @@ class QueryOrganizationsItem(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the organization.")
 
 
-class QueryOrganizationMembersAction(pydantic.BaseModel):
+class QueryOrganizationMembersAction(_sidex.Model):
     """Query the members of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -93,7 +96,7 @@ class QueryOrganizationMembersAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationMembersOutput(pydantic.BaseModel):
+class QueryOrganizationMembersOutput(_sidex.Model):
     """Output of querying the members of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -105,7 +108,7 @@ class QueryOrganizationMembersOutput(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationMembersItem(pydantic.BaseModel):
+class QueryOrganizationMembersItem(_sidex.Model):
     """Member item."""
 
     model_config = pydantic.ConfigDict(
@@ -124,14 +127,14 @@ class QueryOrganizationMembersItem(pydantic.BaseModel):
         serialization_alias="displayName",
     )
     email: str = pydantic.Field(description="Email of the user.")
-    is_admin: bool = pydantic.Field(
+    is_admin: _sidex.Bool = pydantic.Field(
         description="Whether the user is an administrator of the organization.",
         validation_alias="isAdmin",
         serialization_alias="isAdmin",
     )
 
 
-class QueryOrganizationProjectsAction(pydantic.BaseModel):
+class QueryOrganizationProjectsAction(_sidex.Model):
     """Query the projects of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -145,7 +148,7 @@ class QueryOrganizationProjectsAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationProjectsOutput(pydantic.BaseModel):
+class QueryOrganizationProjectsOutput(_sidex.Model):
     """Output of querying the projects of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -157,7 +160,7 @@ class QueryOrganizationProjectsOutput(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationProjectsItem(pydantic.BaseModel):
+class QueryOrganizationProjectsItem(_sidex.Model):
     """Project item."""
 
     model_config = pydantic.ConfigDict(
@@ -172,7 +175,7 @@ class QueryOrganizationProjectsItem(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the project.")
 
 
-class QueryOrganizationRepositoriesAction(pydantic.BaseModel):
+class QueryOrganizationRepositoriesAction(_sidex.Model):
     """Query the repositories of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -186,7 +189,7 @@ class QueryOrganizationRepositoriesAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationRepositoriesOutput(pydantic.BaseModel):
+class QueryOrganizationRepositoriesOutput(_sidex.Model):
     """Output of querying the repositories of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -198,7 +201,7 @@ class QueryOrganizationRepositoriesOutput(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationRepositoriesItem(pydantic.BaseModel):
+class QueryOrganizationRepositoriesItem(_sidex.Model):
     """Repository item."""
 
     model_config = pydantic.ConfigDict(
@@ -226,7 +229,7 @@ class QueryOrganizationRepositoriesItem(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationInvitationsAction(pydantic.BaseModel):
+class QueryOrganizationInvitationsAction(_sidex.Model):
     """Query the invitations of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -240,7 +243,7 @@ class QueryOrganizationInvitationsAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationInvitationsOutput(pydantic.BaseModel):
+class QueryOrganizationInvitationsOutput(_sidex.Model):
     """Output of querying the invitations of an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -252,7 +255,7 @@ class QueryOrganizationInvitationsOutput(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationInvitationsItem(pydantic.BaseModel):
+class QueryOrganizationInvitationsItem(_sidex.Model):
     """Organization invitation item."""
 
     model_config = pydantic.ConfigDict(
@@ -273,7 +276,7 @@ class QueryOrganizationInvitationsItem(pydantic.BaseModel):
     )
 
 
-class CreateOrganizationAction(pydantic.BaseModel):
+class CreateOrganizationAction(_sidex.Model):
     """Create an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -284,14 +287,14 @@ class CreateOrganizationAction(pydantic.BaseModel):
     admins: list[_schema_users.UserId] | None = pydantic.Field(
         default=None, description="Admins of the organization."
     )
-    requires_subscription: bool = pydantic.Field(
+    requires_subscription: _sidex.Bool = pydantic.Field(
         description="Whether the organization requires a subscription.",
         validation_alias="requiresSubscription",
         serialization_alias="requiresSubscription",
     )
 
 
-class CreateOrganizationOutput(pydantic.BaseModel):
+class CreateOrganizationOutput(_sidex.Model):
     """Output of creating an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -305,7 +308,7 @@ class CreateOrganizationOutput(pydantic.BaseModel):
     )
 
 
-class DeleteOrganizationAction(pydantic.BaseModel):
+class DeleteOrganizationAction(_sidex.Model):
     """Delete an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -319,7 +322,7 @@ class DeleteOrganizationAction(pydantic.BaseModel):
     )
 
 
-class AddOrganizationMemberAction(pydantic.BaseModel):
+class AddOrganizationMemberAction(_sidex.Model):
     """Add a user to an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -336,7 +339,7 @@ class AddOrganizationMemberAction(pydantic.BaseModel):
         validation_alias="userId",
         serialization_alias="userId",
     )
-    is_admin: bool | None = pydantic.Field(
+    is_admin: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Whether the user should be an administrator of the organization.",
         validation_alias="isAdmin",
@@ -344,7 +347,7 @@ class AddOrganizationMemberAction(pydantic.BaseModel):
     )
 
 
-class RemoveOrganizationMemberAction(pydantic.BaseModel):
+class RemoveOrganizationMemberAction(_sidex.Model):
     """Remove a user from an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -363,7 +366,7 @@ class RemoveOrganizationMemberAction(pydantic.BaseModel):
     )
 
 
-class SetOrganizationMemberIsAdminAction(pydantic.BaseModel):
+class SetOrganizationMemberIsAdminAction(_sidex.Model):
     """Set whether the user is an administrator of the organization."""
 
     model_config = pydantic.ConfigDict(
@@ -380,14 +383,14 @@ class SetOrganizationMemberIsAdminAction(pydantic.BaseModel):
         validation_alias="userId",
         serialization_alias="userId",
     )
-    is_admin: bool = pydantic.Field(
+    is_admin: _sidex.Bool = pydantic.Field(
         description="Whether the user should be an administrator of the organization.",
         validation_alias="isAdmin",
         serialization_alias="isAdmin",
     )
 
 
-class InviteOrganizationMemberAction(pydantic.BaseModel):
+class InviteOrganizationMemberAction(_sidex.Model):
     """Invite a user to an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -402,7 +405,7 @@ class InviteOrganizationMemberAction(pydantic.BaseModel):
     email: str = pydantic.Field(description="Email address of the user to invite.")
 
 
-class InviteOrganizationMemberOutput(pydantic.BaseModel):
+class InviteOrganizationMemberOutput(_sidex.Model):
     """Output of inviting a user to an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -416,7 +419,7 @@ class InviteOrganizationMemberOutput(pydantic.BaseModel):
     )
 
 
-class DeleteOrganizationInvitationAction(pydantic.BaseModel):
+class DeleteOrganizationInvitationAction(_sidex.Model):
     """Delete an invitation to an organization."""
 
     model_config = pydantic.ConfigDict(
@@ -430,13 +433,17 @@ class DeleteOrganizationInvitationAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationAuditLogAction(pydantic.BaseModel):
+class QueryOrganizationAuditLogAction(_sidex.Model):
     """Query the audit log of an organization."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
     organization_id: OrganizationId = pydantic.Field(
         description="ID of the organization.",
         validation_alias="organizationId",
@@ -444,13 +451,65 @@ class QueryOrganizationAuditLogAction(pydantic.BaseModel):
     )
 
 
-class QueryOrganizationAuditLogOutput(pydantic.BaseModel):
+class QueryOrganizationAuditLogOutput(_sidex.Model):
     """Output of querying the audit log of an organization."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     events: list[_schema_audit.AuditLogEvent] = pydantic.Field(
         description="List of audit log events."
+    )
+
+
+class SetOrganizationS3ConfigAction(_sidex.Model):
+    """Organization S3 defaults for repositories without their own configuration."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    organization_id: OrganizationId = pydantic.Field(
+        validation_alias="organizationId", serialization_alias="organizationId"
+    )
+    s_3_config: _schema_repositories.RepositoryS3Config = pydantic.Field(
+        validation_alias="s3Config", serialization_alias="s3Config"
+    )
+
+
+class GetOrganizationS3ConfigAction(_sidex.Model):
+    """Get organization storage settings. Secret credentials are never returned."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    organization_id: OrganizationId = pydantic.Field(
+        validation_alias="organizationId", serialization_alias="organizationId"
+    )
+
+
+class GetOrganizationS3ConfigOutput(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    s_3_config: _schema_repositories.RepositoryS3Config | None = pydantic.Field(
+        default=None, validation_alias="s3Config", serialization_alias="s3Config"
+    )
+
+
+class DeleteOrganizationS3ConfigAction(_sidex.Model):
+    """Remove organization storage defaults without deleting stored objects."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    organization_id: OrganizationId = pydantic.Field(
+        validation_alias="organizationId", serialization_alias="organizationId"
     )

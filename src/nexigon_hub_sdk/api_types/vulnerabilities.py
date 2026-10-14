@@ -7,14 +7,16 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import repositories as _schema_repositories  # noqa: F401
 
 
-class IndexVersionDocumentsAction(pydantic.BaseModel):
+class IndexVersionDocumentsAction(_sidex.Model):
     """**Unstable (feature `vulnerability_management`).**
 
-    Trigger indexing of every CycloneDX document referenced by the
+    Trigger indexing of every CycloneDX or SPDX document referenced by the
     version's artifact assets via `relations.{sbom,vdr,vex}`.
 
     The hub fetches the referenced documents from the repository's S3
@@ -30,32 +32,32 @@ class IndexVersionDocumentsAction(pydantic.BaseModel):
     )
 
 
-class IndexVersionDocumentsOutput(pydantic.BaseModel):
+class IndexVersionDocumentsOutput(_sidex.Model):
     """Output of `IndexVersionDocumentsAction`."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    indexed: bool = pydantic.Field(
+    indexed: _sidex.Bool = pydantic.Field(
         description="Whether indexing actually ran (false when the feature flag is off\nor the version has no artifacts with `relations.*` metadata)."
     )
-    artifact_count: int = pydantic.Field(
+    artifact_count: _sidex.U32 = pydantic.Field(
         description="Number of artifact assets whose documents were indexed.",
         validation_alias="artifactCount",
         serialization_alias="artifactCount",
     )
-    document_count: int = pydantic.Field(
+    document_count: _sidex.U32 = pydantic.Field(
         description="Total number of documents (SBOM + VDR + VEX) ingested.",
         validation_alias="documentCount",
         serialization_alias="documentCount",
     )
 
 
-class IndexPackageDocumentsAction(pydantic.BaseModel):
+class IndexPackageDocumentsAction(_sidex.Model):
     """**Unstable (feature `vulnerability_management`).**
 
-    Trigger indexing of every CycloneDX document referenced by the
+    Trigger indexing of every CycloneDX or SPDX document referenced by the
     package's metadata via `relations.{vex}` (typically just VEX).
 
     Mirrors `IndexVersionDocumentsAction`. Used after attaching a new
@@ -70,18 +72,18 @@ class IndexPackageDocumentsAction(pydantic.BaseModel):
     )
 
 
-class IndexPackageDocumentsOutput(pydantic.BaseModel):
+class IndexPackageDocumentsOutput(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    indexed: bool
-    document_count: int = pydantic.Field(
+    indexed: _sidex.Bool
+    document_count: _sidex.U32 = pydantic.Field(
         validation_alias="documentCount", serialization_alias="documentCount"
     )
 
 
-class GetVersionVulnerabilityOverviewAction(pydantic.BaseModel):
+class GetVersionVulnerabilityOverviewAction(_sidex.Model):
     """**Unstable (feature `vulnerability_management`).**
 
     Get the vulnerability overview for a package version: artifact list,
@@ -97,7 +99,7 @@ class GetVersionVulnerabilityOverviewAction(pydantic.BaseModel):
     )
 
 
-class GetVersionVulnerabilityOverviewOutput(pydantic.BaseModel):
+class GetVersionVulnerabilityOverviewOutput(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -105,7 +107,7 @@ class GetVersionVulnerabilityOverviewOutput(pydantic.BaseModel):
     version_id: _schema_repositories.PackageVersionId = pydantic.Field(
         validation_alias="versionId", serialization_alias="versionId"
     )
-    indexing_enabled: bool = pydantic.Field(
+    indexing_enabled: _sidex.Bool = pydantic.Field(
         description="Whether the indexing feature is enabled for this organization.",
         validation_alias="indexingEnabled",
         serialization_alias="indexingEnabled",
@@ -124,7 +126,7 @@ class GetVersionVulnerabilityOverviewOutput(pydantic.BaseModel):
         validation_alias="severitySummary",
         serialization_alias="severitySummary",
     )
-    component_count: int | None = pydantic.Field(
+    component_count: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Total component count across all artifact SBOMs (including\nduplicates if the same component is referenced from several\nartifacts). Not set when indexing is disabled.",
         validation_alias="componentCount",
@@ -132,7 +134,7 @@ class GetVersionVulnerabilityOverviewOutput(pydantic.BaseModel):
     )
 
 
-class ArtifactDescriptor(pydantic.BaseModel):
+class ArtifactDescriptor(_sidex.Model):
     """Per-artifact view of attached vulnerability documents."""
 
     model_config = pydantic.ConfigDict(
@@ -159,7 +161,7 @@ class ArtifactDescriptor(pydantic.BaseModel):
         validation_alias="severitySummary",
         serialization_alias="severitySummary",
     )
-    component_count: int | None = pydantic.Field(
+    component_count: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Number of components extracted from this artifact's SBOM.",
         validation_alias="componentCount",
@@ -167,7 +169,7 @@ class ArtifactDescriptor(pydantic.BaseModel):
     )
 
 
-class AttachedDocument(pydantic.BaseModel):
+class AttachedDocument(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -179,10 +181,10 @@ class AttachedDocument(pydantic.BaseModel):
         validation_alias="repositoryId", serialization_alias="repositoryId"
     )
     filename: str
-    size: int
+    size: _sidex.U64
 
 
-class AttachedVdrDocument(pydantic.BaseModel):
+class AttachedVdrDocument(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -198,34 +200,34 @@ class AttachedVdrDocument(pydantic.BaseModel):
     )
 
 
-class AttachedVexDocument(pydantic.BaseModel):
+class AttachedVexDocument(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
     document: AttachedDocument
     origin: VexStatementOrigin
-    statement_count: int | None = pydantic.Field(
+    statement_count: _sidex.U32 | None = pydantic.Field(
         default=None,
         validation_alias="statementCount",
         serialization_alias="statementCount",
     )
 
 
-class SeveritySummary(pydantic.BaseModel):
+class SeveritySummary(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    critical: int
-    high: int
-    medium: int
-    low: int
-    info: int
-    unknown: int
+    critical: _sidex.U32
+    high: _sidex.U32
+    medium: _sidex.U32
+    low: _sidex.U32
+    info: _sidex.U32
+    unknown: _sidex.U32
 
 
-class QueryPackageVersionComponentsAction(pydantic.BaseModel):
+class QueryPackageVersionComponentsAction(_sidex.Model):
     """**Unstable (feature `vulnerability_management`).**
 
     Query the components extracted from a package version's SBOMs."""
@@ -255,18 +257,18 @@ class QueryPackageVersionComponentsAction(pydantic.BaseModel):
     )
 
 
-class QueryPackageVersionComponentsOutput(pydantic.BaseModel):
+class QueryPackageVersionComponentsOutput(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    indexing_enabled: bool = pydantic.Field(
+    indexing_enabled: _sidex.Bool = pydantic.Field(
         validation_alias="indexingEnabled", serialization_alias="indexingEnabled"
     )
     components: list[PackageVersionComponent]
 
 
-class PackageVersionComponent(pydantic.BaseModel):
+class PackageVersionComponent(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -294,7 +296,7 @@ class PackageVersionComponent(pydantic.BaseModel):
     )
 
 
-class QueryPackageVersionFindingsAction(pydantic.BaseModel):
+class QueryPackageVersionFindingsAction(_sidex.Model):
     """**Unstable (feature `vulnerability_management`).**"""
 
     model_config = pydantic.ConfigDict(
@@ -318,18 +320,18 @@ class QueryPackageVersionFindingsAction(pydantic.BaseModel):
     )
 
 
-class QueryPackageVersionFindingsOutput(pydantic.BaseModel):
+class QueryPackageVersionFindingsOutput(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    indexing_enabled: bool = pydantic.Field(
+    indexing_enabled: _sidex.Bool = pydantic.Field(
         validation_alias="indexingEnabled", serialization_alias="indexingEnabled"
     )
     findings: list[PackageVersionFinding]
 
 
-class PackageVersionFinding(pydantic.BaseModel):
+class PackageVersionFinding(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -352,7 +354,7 @@ class PackageVersionFinding(pydantic.BaseModel):
         validation_alias="vulnerabilityId", serialization_alias="vulnerabilityId"
     )
     severity: str
-    cvss_score: float | None = pydantic.Field(
+    cvss_score: _sidex.F64 | None = pydantic.Field(
         default=None, validation_alias="cvssScore", serialization_alias="cvssScore"
     )
     description: str | None = pydantic.Field(default=None)

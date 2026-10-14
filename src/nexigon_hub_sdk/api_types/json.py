@@ -7,6 +7,471 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 
 # JSON value.
-type JsonValue = pydantic.JsonValue
+type JsonValue = _sidex.Json
+
+
+class JsonNamedValueExpr(_sidex.Model):
+    """Read a named JSON value from the evaluation context."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    name: str = pydantic.Field(description="Named value identifier.")
+    default: JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Fallback expression for a missing named value.\n\nIf set, a missing named value evaluates this expression instead of\nraising an evaluation error.",
+    )
+
+
+class JsonGetExpr(_sidex.Model):
+    """Get a nested value inside another expression result."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that evaluates to the value to read from."
+    )
+    path: JsonPath = pydantic.Field(
+        description="Path to read inside the expression result. An empty path reads the\nexpression result itself."
+    )
+    default: JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Fallback expression for a missing expression or path.\n\nIf set, missing named values and missing paths evaluate this expression\ninstead of raising an evaluation error. Other errors still propagate.",
+    )
+
+
+# Structured path into a JSON value.
+#
+# A JSON array of path segments. String segments address object members;
+# unsigned integer segments address array elements. The empty path addresses
+# the expression or mutation root. Operation definitions accept at most 32
+# segments per path.
+type JsonPath = list[JsonPathSegment]
+
+
+class JsonUnaryExpr(_sidex.Model):
+    """Unary expression payload."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    expr: JsonExpr = pydantic.Field(description="Operand expression.")
+
+
+class JsonBinaryExpr(_sidex.Model):
+    """Binary expression payload."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+
+class JsonVariadicExpr(_sidex.Model):
+    """Variadic expression payload."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    exprs: list[JsonExpr] = pydantic.Field(
+        description="Operand expressions. At least one is required in an operation\ndefinition."
+    )
+
+
+class JsonExistsExpr(_sidex.Model):
+    """Path existence expression payload."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    expr: JsonExpr = pydantic.Field(description="Expression to test.")
+    path: JsonPath = pydantic.Field(
+        description="Path to resolve against the expression result. The empty path tests\nwhether the expression itself resolves."
+    )
+
+
+class JsonVersionRequirementExpr(_sidex.Model):
+    """Version requirement expression payload."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that must evaluate to a version string."
+    )
+    requirement: str = pydantic.Field(
+        description="Version requirement, for example `>=1.2.0, <2.0.0`."
+    )
+
+
+class JsonSetMutation(_sidex.Model):
+    """Set mutation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    path: JsonPath = pydantic.Field(
+        description="Path locating the value to replace. An empty path replaces the root."
+    )
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that produces the value to write."
+    )
+
+
+class JsonMergePatchMutation(_sidex.Model):
+    """RFC 7396 JSON Merge Patch mutation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    path: JsonPath = pydantic.Field(
+        description="Path locating the value to patch. An empty path patches the root."
+    )
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that produces the JSON Merge Patch document."
+    )
+
+
+class JsonRemoveMutation(_sidex.Model):
+    """Remove mutation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    path: JsonPath = pydantic.Field(
+        description="Non-empty path to remove in the root value.\n\nA mutation cannot remove its root because its result is still a JSON\nvalue. Use the operation's `RemoveDeviceProperty` step to delete an\nentire property."
+    )
+
+
+class JsonExpr_Literal(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Literal"] = "Literal"
+    value: JsonValue
+
+    def payload(self) -> "JsonValue":
+        return self.value
+
+
+class JsonExpr_Current(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Current"] = "Current"
+
+
+class JsonExpr_NamedValue(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["NamedValue"] = "NamedValue"
+    name: str = pydantic.Field(description="Named value identifier.")
+    default: JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Fallback expression for a missing named value.\n\nIf set, a missing named value evaluates this expression instead of\nraising an evaluation error.",
+    )
+
+    def payload(self) -> "JsonNamedValueExpr":
+        return JsonNamedValueExpr(name=self.name, default=self.default)
+
+
+class JsonExpr_Get(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Get"] = "Get"
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that evaluates to the value to read from."
+    )
+    path: JsonPath = pydantic.Field(
+        description="Path to read inside the expression result. An empty path reads the\nexpression result itself."
+    )
+    default: JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Fallback expression for a missing expression or path.\n\nIf set, missing named values and missing paths evaluate this expression\ninstead of raising an evaluation error. Other errors still propagate.",
+    )
+
+    def payload(self) -> "JsonGetExpr":
+        return JsonGetExpr(expr=self.expr, path=self.path, default=self.default)
+
+
+class JsonExpr_Equals(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Equals"] = "Equals"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_NotEquals(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["NotEquals"] = "NotEquals"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_LessThan(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["LessThan"] = "LessThan"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_LessThanOrEquals(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["LessThanOrEquals"] = "LessThanOrEquals"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_GreaterThan(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["GreaterThan"] = "GreaterThan"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_GreaterThanOrEquals(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["GreaterThanOrEquals"] = "GreaterThanOrEquals"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_In(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["In"] = "In"
+    left: JsonExpr = pydantic.Field(description="Left operand.")
+    right: JsonExpr = pydantic.Field(description="Right operand.")
+
+    def payload(self) -> "JsonBinaryExpr":
+        return JsonBinaryExpr(left=self.left, right=self.right)
+
+
+class JsonExpr_And(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["And"] = "And"
+    exprs: list[JsonExpr] = pydantic.Field(
+        description="Operand expressions. At least one is required in an operation\ndefinition."
+    )
+
+    def payload(self) -> "JsonVariadicExpr":
+        return JsonVariadicExpr(exprs=self.exprs)
+
+
+class JsonExpr_Or(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Or"] = "Or"
+    exprs: list[JsonExpr] = pydantic.Field(
+        description="Operand expressions. At least one is required in an operation\ndefinition."
+    )
+
+    def payload(self) -> "JsonVariadicExpr":
+        return JsonVariadicExpr(exprs=self.exprs)
+
+
+class JsonExpr_Not(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Not"] = "Not"
+    expr: JsonExpr = pydantic.Field(description="Operand expression.")
+
+    def payload(self) -> "JsonUnaryExpr":
+        return JsonUnaryExpr(expr=self.expr)
+
+
+class JsonExpr_Exists(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["Exists"] = "Exists"
+    expr: JsonExpr = pydantic.Field(description="Expression to test.")
+    path: JsonPath = pydantic.Field(
+        description="Path to resolve against the expression result. The empty path tests\nwhether the expression itself resolves."
+    )
+
+    def payload(self) -> "JsonExistsExpr":
+        return JsonExistsExpr(expr=self.expr, path=self.path)
+
+
+class JsonExpr_VersionRequirement(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["VersionRequirement"] = "VersionRequirement"
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that must evaluate to a version string."
+    )
+    requirement: str = pydantic.Field(
+        description="Version requirement, for example `>=1.2.0, <2.0.0`."
+    )
+
+    def payload(self) -> "JsonVersionRequirementExpr":
+        return JsonVersionRequirementExpr(expr=self.expr, requirement=self.requirement)
+
+
+# JSON expression evaluated against a context of named JSON values.
+#
+# Every expression returns a `JsonValue`; boolean expressions are not a
+# separate language. A consumer that uses an expression as a condition
+# requires its result to be a JSON boolean.
+#
+# `NamedValue` reads are supplied by the consumer. In device and fleet
+# operations, each name is an exact device-property name and its value is the
+# property's JSON value. A missing name is distinct from a name whose value is
+# JSON `null`.
+type JsonExpr = Annotated[
+    JsonExpr_Literal
+    | JsonExpr_Current
+    | JsonExpr_NamedValue
+    | JsonExpr_Get
+    | JsonExpr_Equals
+    | JsonExpr_NotEquals
+    | JsonExpr_LessThan
+    | JsonExpr_LessThanOrEquals
+    | JsonExpr_GreaterThan
+    | JsonExpr_GreaterThanOrEquals
+    | JsonExpr_In
+    | JsonExpr_And
+    | JsonExpr_Or
+    | JsonExpr_Not
+    | JsonExpr_Exists
+    | JsonExpr_VersionRequirement,
+    pydantic.Discriminator("kind"),
+]
+
+
+# One segment in a structured JSON path.
+type JsonPathSegment = Annotated[
+    str | _sidex.U32, pydantic.Field(union_mode="left_to_right")
+]
+
+
+class JsonMutation_Set(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    mutation: Literal["Set"] = "Set"
+    path: JsonPath = pydantic.Field(
+        description="Path locating the value to replace. An empty path replaces the root."
+    )
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that produces the value to write."
+    )
+
+    def payload(self) -> "JsonSetMutation":
+        return JsonSetMutation(path=self.path, expr=self.expr)
+
+
+class JsonMutation_MergePatch(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    mutation: Literal["MergePatch"] = "MergePatch"
+    path: JsonPath = pydantic.Field(
+        description="Path locating the value to patch. An empty path patches the root."
+    )
+    expr: JsonExpr = pydantic.Field(
+        description="Expression that produces the JSON Merge Patch document."
+    )
+
+    def payload(self) -> "JsonMergePatchMutation":
+        return JsonMergePatchMutation(path=self.path, expr=self.expr)
+
+
+class JsonMutation_Remove(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    mutation: Literal["Remove"] = "Remove"
+    path: JsonPath = pydantic.Field(
+        description="Non-empty path to remove in the root value.\n\nA mutation cannot remove its root because its result is still a JSON\nvalue. Use the operation's `RemoveDeviceProperty` step to delete an\nentire property."
+    )
+
+    def payload(self) -> "JsonRemoveMutation":
+        return JsonRemoveMutation(path=self.path)
+
+
+# Declarative mutation to apply to a JSON value.
+#
+# Expressions inside a mutation may use `Current` to read the exact value to
+# which the mutation is applied. Object parents missing from a `Set` or
+# `MergePatch` path are created. Array indexes must already exist. Removing a
+# missing member or index is a successful no-op; removing an array element
+# shifts later elements left.
+type JsonMutation = Annotated[
+    JsonMutation_Set | JsonMutation_MergePatch | JsonMutation_Remove,
+    pydantic.Discriminator("mutation"),
+]

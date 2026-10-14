@@ -7,13 +7,16 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import datetime as _schema_datetime  # noqa: F401
+    from . import devices as _schema_devices  # noqa: F401
     from . import json as _schema_json  # noqa: F401
     from . import projects as _schema_projects  # noqa: F401
 
 
-class SetFleetPropertyAction(pydantic.BaseModel):
+class SetFleetPropertyAction(_sidex.Model):
     """Set a fleet property manually."""
 
     model_config = pydantic.ConfigDict(
@@ -29,7 +32,7 @@ class SetFleetPropertyAction(pydantic.BaseModel):
     value: _schema_json.JsonValue = pydantic.Field(description="Value of the property.")
 
 
-class GetFleetPropertyAction(pydantic.BaseModel):
+class GetFleetPropertyAction(_sidex.Model):
     """Get a fleet property by name."""
 
     model_config = pydantic.ConfigDict(
@@ -44,7 +47,7 @@ class GetFleetPropertyAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the property.")
 
 
-class RemoveFleetPropertyAction(pydantic.BaseModel):
+class RemoveFleetPropertyAction(_sidex.Model):
     """Remove a fleet property.
 
     Handles both manual and computed properties. For computed properties, the
@@ -62,7 +65,7 @@ class RemoveFleetPropertyAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the property.")
 
 
-class QueryFleetPropertiesAction(pydantic.BaseModel):
+class QueryFleetPropertiesAction(_sidex.Model):
     """Query all fleet properties of a project."""
 
     model_config = pydantic.ConfigDict(
@@ -76,7 +79,7 @@ class QueryFleetPropertiesAction(pydantic.BaseModel):
     )
 
 
-class QueryFleetPropertiesOutput(pydantic.BaseModel):
+class QueryFleetPropertiesOutput(_sidex.Model):
     """Output of querying fleet properties."""
 
     model_config = pydantic.ConfigDict(
@@ -88,7 +91,7 @@ class QueryFleetPropertiesOutput(pydantic.BaseModel):
     )
 
 
-class FleetProperty(pydantic.BaseModel):
+class FleetProperty(_sidex.Model):
     """A fleet property."""
 
     model_config = pydantic.ConfigDict(
@@ -100,7 +103,7 @@ class FleetProperty(pydantic.BaseModel):
     kind: FleetPropertyKind = pydantic.Field(
         description="How this property is managed."
     )
-    version: int = pydantic.Field(
+    version: _sidex.U64 = pydantic.Field(
         description="Incremental version number, bumped on each update."
     )
     error: str | None = pydantic.Field(
@@ -113,7 +116,7 @@ class FleetProperty(pydantic.BaseModel):
     )
 
 
-class DefineComputedFleetPropertyAction(pydantic.BaseModel):
+class DefineComputedFleetPropertyAction(_sidex.Model):
     """**Unstable (feature `fleet_computed_properties`).**
 
     Define a computed fleet property."""
@@ -139,7 +142,7 @@ class DefineComputedFleetPropertyAction(pydantic.BaseModel):
     )
 
 
-class QueryComputedFleetPropertyDefinitionsAction(pydantic.BaseModel):
+class QueryComputedFleetPropertyDefinitionsAction(_sidex.Model):
     """**Unstable (feature `fleet_computed_properties`).**
 
     Query computed fleet property definitions for a project."""
@@ -155,7 +158,7 @@ class QueryComputedFleetPropertyDefinitionsAction(pydantic.BaseModel):
     )
 
 
-class QueryComputedFleetPropertyDefinitionsOutput(pydantic.BaseModel):
+class QueryComputedFleetPropertyDefinitionsOutput(_sidex.Model):
     """**Unstable (feature `fleet_computed_properties`).**
 
     Output of querying computed fleet property definitions."""
@@ -169,7 +172,7 @@ class QueryComputedFleetPropertyDefinitionsOutput(pydantic.BaseModel):
     )
 
 
-class ComputedFleetPropertyDefinition(pydantic.BaseModel):
+class ComputedFleetPropertyDefinition(_sidex.Model):
     """**Unstable (feature `fleet_computed_properties`).**
 
     A computed fleet property definition."""
@@ -195,7 +198,584 @@ class ComputedFleetPropertyDefinition(pydantic.BaseModel):
     )
 
 
-class GetFleetPropertyOutput_NotFound(pydantic.BaseModel):
+class FleetOperationId(str):
+    """Unique ID of a fleet operation."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
+    ) -> pydantic_core.CoreSchema:
+        return handler(str)
+
+
+class FleetOperationTargetSelector(_sidex.Model):
+    """Device selection within a single project. All supplied conditions must hold."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_ids: list[_schema_devices.DeviceId] | None = pydantic.Field(
+        default=None,
+        description="Optional explicit allow-list. An empty list matches no devices.",
+        validation_alias="deviceIds",
+        serialization_alias="deviceIds",
+    )
+    predicates: list[_schema_json.JsonExpr] = pydantic.Field(
+        description="Property expressions, evaluated in order until the first false or error.\nNamedValue reads a device property by its exact name. Errors are reported\nseparately from non-matches. Metadata conditions are evaluated first."
+    )
+    groups: _schema_devices.DeviceGroupSelector | None = pydantic.Field(default=None)
+    search: str | None = pydantic.Field(
+        default=None,
+        description="Case-insensitive substring of device name, hostname, or ID.",
+    )
+    status: _schema_devices.DeviceStatus | None = pydantic.Field(
+        default=None, description="Current combined health and connection status."
+    )
+
+
+class FleetOperationStage(_sidex.Model):
+    """One stage in a fleet operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    name: str = pydantic.Field(description="Human-readable stage name.")
+    percentage: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Percent of matching devices included in this stage.\n\nUses deterministic sampling so stage membership is stable for a\ngiven fleet operation and device. Defaults to 100.",
+    )
+    auto_advance: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Whether to automatically activate the next stage once this stage's\nguard criteria pass.",
+        validation_alias="autoAdvance",
+        serialization_alias="autoAdvance",
+    )
+    guard: FleetOperationStageGuard | None = pydantic.Field(
+        default=None, description="Guard checked before advancing past this stage."
+    )
+
+
+class FleetOperationStageGuard(_sidex.Model):
+    """Guard checked before a stage can be advanced."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    min_success_percent: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Required percent of selected targets that must have succeeded.",
+        validation_alias="minSuccessPercent",
+        serialization_alias="minSuccessPercent",
+    )
+    max_failure_percent: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum percent of selected targets that may have failed.",
+        validation_alias="maxFailurePercent",
+        serialization_alias="maxFailurePercent",
+    )
+    gates: list[FleetOperationStageGate] = pydantic.Field(
+        description="Additional observed gates that must pass before advancing."
+    )
+
+
+class FleetOperationDevicePropertyGate(_sidex.Model):
+    """Gate over target device properties."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    predicate: _schema_json.JsonExpr = pydantic.Field(
+        description="Boolean expression evaluated against selected targets' properties.\n\nA missing property is a non-match. Other evaluation errors block the\ngate and are reported in its status."
+    )
+    min_match_percent: _sidex.U32 = pydantic.Field(
+        description="Required percent of selected targets that must match.",
+        validation_alias="minMatchPercent",
+        serialization_alias="minMatchPercent",
+    )
+
+
+class FleetOperationNotBeforeGate(_sidex.Model):
+    """Gate that passes once hub server time has reached a timestamp."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    not_before: _schema_datetime.Timestamp = pydantic.Field(
+        description="Earliest timestamp at which the stage can advance.",
+        validation_alias="notBefore",
+        serialization_alias="notBefore",
+    )
+
+
+class FleetOperationSummary(_sidex.Model):
+    """Summary of a fleet operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        description="Project the fleet operation belongs to.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    name: str = pydantic.Field(description="Name of the fleet operation.")
+    description: str | None = pydantic.Field(
+        default=None, description="Optional description."
+    )
+    status: FleetOperationStatus = pydantic.Field(description="Lifecycle status.")
+    enrollment_interval_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="How often the selector is re-evaluated to enroll newly matching devices.\n\nAbsence means snapshot enrollment: the selector is evaluated exactly once.\nPresence makes the operation dynamic: the selector is re-evaluated while the\noperation remains running. The instance clamps this to a minimum when scheduling,\nso the interval actually used may be longer than the one requested here.",
+        validation_alias="enrollmentIntervalSecs",
+        serialization_alias="enrollmentIntervalSecs",
+    )
+    last_enrollment_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="When the selector was last evaluated. Absent until the first enrollment pass.",
+        validation_alias="lastEnrollmentAt",
+        serialization_alias="lastEnrollmentAt",
+    )
+    close_when_converged: _sidex.Bool = pydantic.Field(
+        description="Whether the operation automatically completes once all of its targets\nconverge to a terminal state.\n\nAlways `true` when `enrollment_interval_secs` is absent. When an interval is\npresent, `false` keeps the operation running indefinitely, continuing to enroll\nnewly matching devices until explicitly cancelled.",
+        validation_alias="closeWhenConverged",
+        serialization_alias="closeWhenConverged",
+    )
+    active_stage_index: _sidex.U32 = pydantic.Field(
+        description="Highest activated stage index.\n\nAll stages up to and including this index can continue progressing.\nThe guard for this index controls advancement to the next stage.",
+        validation_alias="activeStageIndex",
+        serialization_alias="activeStageIndex",
+    )
+    stage_count: _sidex.U32 = pydantic.Field(
+        description="Number of stages.",
+        validation_alias="stageCount",
+        serialization_alias="stageCount",
+    )
+    progress: FleetOperationProgress = pydantic.Field(
+        description="Progress across selected targets."
+    )
+    created_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Creation time.",
+        validation_alias="createdAt",
+        serialization_alias="createdAt",
+    )
+    started_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Start time.",
+        validation_alias="startedAt",
+        serialization_alias="startedAt",
+    )
+    completed_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Completion time.",
+        validation_alias="completedAt",
+        serialization_alias="completedAt",
+    )
+
+
+class FleetOperationDetails(_sidex.Model):
+    """Fleet operation details."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    summary: FleetOperationSummary = pydantic.Field(description="Summary.")
+    selector: FleetOperationTargetSelector = pydantic.Field(
+        description="Target selector."
+    )
+    stages: list[FleetOperationStage] = pydantic.Field(description="Stages.")
+    steps: list[_schema_devices.DeviceOperationStep] = pydantic.Field(
+        description="Ordered steps for each selected device."
+    )
+
+
+class FleetOperationProgress(_sidex.Model):
+    """Progress counts for selected targets."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    total: _sidex.U32
+    pending: _sidex.U32
+    running: _sidex.U32
+    succeeded: _sidex.U32
+    failed: _sidex.U32
+    timed_out: _sidex.U32 = pydantic.Field(
+        validation_alias="timedOut", serialization_alias="timedOut"
+    )
+    cancelled: _sidex.U32
+
+
+class FleetOperationSelectionError(_sidex.Model):
+    """A device the target selector could not be evaluated against.
+
+    The device is not a target: the operation could not establish that it even applies to
+    it. The error is recorded so that a broken selector is visible instead of silently
+    narrowing the fleet, and the operation retries the device on its next enrollment pass."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: _schema_devices.DeviceId = pydantic.Field(
+        description="Device the selector failed on.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    error: str = pydantic.Field(description="Why evaluating the selector failed.")
+    updated_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="When the error was last observed.",
+        validation_alias="updatedAt",
+        serialization_alias="updatedAt",
+    )
+
+
+class FleetOperationTarget(_sidex.Model):
+    """A device a fleet operation applies to, and how its work is faring.
+
+    A device becomes a target when the operation's selector matches it and it is given a
+    device operation. That device operation is what actually executes; the fields below
+    report its progress."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: _schema_devices.DeviceId = pydantic.Field(
+        description="Device the fleet operation applies to.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    device_operation_id: _schema_devices.DeviceOperationId = pydantic.Field(
+        description="ID of the device operation carrying out the work on that device.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+    stage_index: _sidex.U32 = pydantic.Field(
+        validation_alias="stageIndex", serialization_alias="stageIndex"
+    )
+    step_index: _sidex.U32 = pydantic.Field(
+        validation_alias="stepIndex", serialization_alias="stepIndex"
+    )
+    status: _schema_devices.DeviceOperationStatus
+    last_error: str | None = pydantic.Field(
+        default=None, validation_alias="lastError", serialization_alias="lastError"
+    )
+    updated_at: _schema_datetime.Timestamp = pydantic.Field(
+        validation_alias="updatedAt", serialization_alias="updatedAt"
+    )
+    step_states: list[_schema_devices.DeviceOperationStepState] = pydantic.Field(
+        description="State for steps that have started, one entry per step reached so far.\n\nA step with no entry here has not been reached yet. Correlate entries\nwith `FleetOperationDetails.steps` by `step_index`, not array position\nor length — this list isn't guaranteed to stay dense or gapless as a\nmatter of API contract, even though the current driver happens to\nfill it in strictly in order.",
+        validation_alias="stepStates",
+        serialization_alias="stepStates",
+    )
+
+
+class QueryFleetOperationsAction(_sidex.Model):
+    """Query fleet operations for a project."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+
+
+class QueryFleetOperationsOutput(_sidex.Model):
+    """Output of querying fleet operations."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    operations: list[FleetOperationSummary] = pydantic.Field(
+        description="Fleet operations."
+    )
+
+
+class GetFleetOperationAction(_sidex.Model):
+    """Get fleet operation details."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class CreateFleetOperationAction(_sidex.Model):
+    """Create a fleet operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        description="Project the fleet operation belongs to.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    name: str = pydantic.Field(description="Fleet operation name.")
+    description: str | None = pydantic.Field(
+        default=None, description="Optional description."
+    )
+    enrollment_interval_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="How often to re-evaluate the selector, in seconds, to enroll devices that\nhave started matching since the operation was created.\n\nPresence makes the operation dynamic. Absence means snapshot enrollment and\nevaluates the selector exactly once. The instance enforces a minimum when\nscheduling, so a shorter interval than the instance permits is accepted but\nenrolled no more often than policy allows.",
+        validation_alias="enrollmentIntervalSecs",
+        serialization_alias="enrollmentIntervalSecs",
+    )
+    close_when_converged: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Whether to automatically complete the operation once all of its targets\nconverge to a terminal state. Defaults to `true`.\n\nCan only be set to `false` when `enrollment_interval_secs` is present.",
+        validation_alias="closeWhenConverged",
+        serialization_alias="closeWhenConverged",
+    )
+    selector: FleetOperationTargetSelector = pydantic.Field(
+        description="Target selector."
+    )
+    stages: list[FleetOperationStage] = pydantic.Field(description="Ordered stages.")
+    steps: list[_schema_devices.DeviceOperationStep] = pydantic.Field(
+        description="Ordered steps for each selected device."
+    )
+
+
+class CreateFleetOperationOutput(_sidex.Model):
+    """Output of creating a fleet operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the created fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class StartFleetOperationAction(_sidex.Model):
+    """Start a draft fleet operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class AdvanceFleetOperationStageAction(_sidex.Model):
+    """Advance the fleet operation to the next stage."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class FleetOperationStageGuardStatus(_sidex.Model):
+    """Guard status when advancement is blocked."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    min_success_percent: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Required success percentage.",
+        validation_alias="minSuccessPercent",
+        serialization_alias="minSuccessPercent",
+    )
+    success_percent: _sidex.U32 = pydantic.Field(
+        description="Actual success percentage.",
+        validation_alias="successPercent",
+        serialization_alias="successPercent",
+    )
+    max_failure_percent: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum allowed failure percentage.",
+        validation_alias="maxFailurePercent",
+        serialization_alias="maxFailurePercent",
+    )
+    failure_percent: _sidex.U32 = pydantic.Field(
+        description="Actual failure percentage.",
+        validation_alias="failurePercent",
+        serialization_alias="failurePercent",
+    )
+    gates: list[FleetOperationStageGateStatus] = pydantic.Field(
+        description="Observed gate results."
+    )
+
+
+class FleetOperationStageGateStatus(_sidex.Model):
+    """Observed gate result."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    gate_index: _sidex.U32 = pydantic.Field(
+        description="Gate index in the stage guard.",
+        validation_alias="gateIndex",
+        serialization_alias="gateIndex",
+    )
+    passed: _sidex.Bool = pydantic.Field(description="Whether the gate passed.")
+    summary: str = pydantic.Field(description="Human-readable summary.")
+    actual_percent: _sidex.U32 = pydantic.Field(
+        description="Actual observed percentage for the gate.",
+        validation_alias="actualPercent",
+        serialization_alias="actualPercent",
+    )
+    threshold_percent: _sidex.U32 = pydantic.Field(
+        description="Required threshold percentage.",
+        validation_alias="thresholdPercent",
+        serialization_alias="thresholdPercent",
+    )
+    evaluation_error_count: _sidex.U32 = pydantic.Field(
+        description="Number of targets whose gate expression produced a non-missing error.",
+        validation_alias="evaluationErrorCount",
+        serialization_alias="evaluationErrorCount",
+    )
+    evaluation_error: str | None = pydantic.Field(
+        default=None,
+        description="One representative evaluation error, when any occurred.",
+        validation_alias="evaluationError",
+        serialization_alias="evaluationError",
+    )
+
+
+class QueryFleetOperationTargetsAction(_sidex.Model):
+    """Query the devices a fleet operation applies to, its *targets*.
+
+    A target is a device the selector matched, reported together with the device operation
+    carrying out the work on it and the stage that gates it. Devices in stages the rollout
+    has not reached yet are included, and are `Pending`.
+
+    This is a separate query rather than part of the operation's details because the list
+    grows with the fleet, and most reads of an operation do not want it."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class QueryFleetOperationTargetsOutput(_sidex.Model):
+    """Output of querying the devices a fleet operation applies to."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    targets: list[FleetOperationTarget] = pydantic.Field(
+        description="Devices the fleet operation applies to."
+    )
+
+
+class QueryFleetOperationSelectionErrorsAction(_sidex.Model):
+    """Query the devices whose selector evaluation failed for a fleet operation.
+
+    Normally empty. A non-empty result means the selector could not be evaluated against
+    those devices, so the operation cannot tell whether it applies to them."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class QueryFleetOperationSelectionErrorsOutput(_sidex.Model):
+    """Output of querying a fleet operation's selection errors."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    errors: list[FleetOperationSelectionError] = pydantic.Field(
+        description="Devices the selector could not be evaluated against."
+    )
+
+
+class PauseFleetOperationAction(_sidex.Model):
+    """Pause a running fleet operation.
+
+    Pausing halts the rollout without undoing any of it. No new devices are enrolled, no
+    device operation makes progress, and devices are handed no new work. Nothing is
+    cancelled and no state is lost.
+
+    A device that already took a work item and has carried it out can still report the
+    result, and the result is recorded: pausing stops new work being generated, it does not
+    discard work that was genuinely done.
+
+    Resume with `fleet_StartOperation`, which picks the rollout up exactly where it left
+    off. Time spent paused does not count towards step timeouts: the clock on any step that
+    was in flight restarts on resume, so a long pause cannot time work out."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class CancelFleetOperationAction(_sidex.Model):
+    """Cancel a fleet operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    fleet_operation_id: FleetOperationId = pydantic.Field(
+        description="ID of the fleet operation.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+
+
+class GetFleetPropertyOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -203,7 +783,7 @@ class GetFleetPropertyOutput_NotFound(pydantic.BaseModel):
     result: Literal["NotFound"] = "NotFound"
 
 
-class GetFleetPropertyOutput_Found(pydantic.BaseModel):
+class GetFleetPropertyOutput_Found(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -214,7 +794,7 @@ class GetFleetPropertyOutput_Found(pydantic.BaseModel):
     kind: FleetPropertyKind = pydantic.Field(
         description="How this property is managed."
     )
-    version: int = pydantic.Field(
+    version: _sidex.U64 = pydantic.Field(
         description="Incremental version number, bumped on each update."
     )
     error: str | None = pydantic.Field(
@@ -244,7 +824,7 @@ type GetFleetPropertyOutput = Annotated[
 ]
 
 
-class RemoveFleetPropertyOutput_NotFound(pydantic.BaseModel):
+class RemoveFleetPropertyOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -252,7 +832,7 @@ class RemoveFleetPropertyOutput_NotFound(pydantic.BaseModel):
     result: Literal["NotFound"] = "NotFound"
 
 
-class RemoveFleetPropertyOutput_Removed(pydantic.BaseModel):
+class RemoveFleetPropertyOutput_Removed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -267,7 +847,7 @@ type RemoveFleetPropertyOutput = Annotated[
 ]
 
 
-class FleetPropertyKind_Manual(pydantic.BaseModel):
+class FleetPropertyKind_Manual(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -275,7 +855,7 @@ class FleetPropertyKind_Manual(pydantic.BaseModel):
     kind: Literal["Manual"] = "Manual"
 
 
-class FleetPropertyKind_Computed(pydantic.BaseModel):
+class FleetPropertyKind_Computed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -283,7 +863,7 @@ class FleetPropertyKind_Computed(pydantic.BaseModel):
     kind: Literal["Computed"] = "Computed"
 
 
-class FleetPropertyKind_Builtin(pydantic.BaseModel):
+class FleetPropertyKind_Builtin(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -295,4 +875,189 @@ class FleetPropertyKind_Builtin(pydantic.BaseModel):
 type FleetPropertyKind = Annotated[
     FleetPropertyKind_Manual | FleetPropertyKind_Computed | FleetPropertyKind_Builtin,
     pydantic.Discriminator("kind"),
+]
+
+
+class FleetOperationStageGate_DeviceProperty(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["DeviceProperty"] = "DeviceProperty"
+    predicate: _schema_json.JsonExpr = pydantic.Field(
+        description="Boolean expression evaluated against selected targets' properties.\n\nA missing property is a non-match. Other evaluation errors block the\ngate and are reported in its status."
+    )
+    min_match_percent: _sidex.U32 = pydantic.Field(
+        description="Required percent of selected targets that must match.",
+        validation_alias="minMatchPercent",
+        serialization_alias="minMatchPercent",
+    )
+
+    def payload(self) -> "FleetOperationDevicePropertyGate":
+        return FleetOperationDevicePropertyGate(
+            predicate=self.predicate, min_match_percent=self.min_match_percent
+        )
+
+
+class FleetOperationStageGate_NotBefore(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["NotBefore"] = "NotBefore"
+    not_before: _schema_datetime.Timestamp = pydantic.Field(
+        description="Earliest timestamp at which the stage can advance.",
+        validation_alias="notBefore",
+        serialization_alias="notBefore",
+    )
+
+    def payload(self) -> "FleetOperationNotBeforeGate":
+        return FleetOperationNotBeforeGate(not_before=self.not_before)
+
+
+# Observed gate checked before a stage can advance.
+type FleetOperationStageGate = Annotated[
+    FleetOperationStageGate_DeviceProperty | FleetOperationStageGate_NotBefore,
+    pydantic.Discriminator("kind"),
+]
+
+
+class FleetOperationStatus_Draft(pydantic.RootModel[Literal["Draft"]]):
+    pass
+
+
+class FleetOperationStatus_Running(pydantic.RootModel[Literal["Running"]]):
+    pass
+
+
+class FleetOperationStatus_Paused(pydantic.RootModel[Literal["Paused"]]):
+    pass
+
+
+class FleetOperationStatus_Completed(pydantic.RootModel[Literal["Completed"]]):
+    pass
+
+
+class FleetOperationStatus_Failed(pydantic.RootModel[Literal["Failed"]]):
+    pass
+
+
+class FleetOperationStatus_Cancelled(pydantic.RootModel[Literal["Cancelled"]]):
+    pass
+
+
+# Fleet operation lifecycle status.
+type FleetOperationStatus = (
+    FleetOperationStatus_Draft
+    | FleetOperationStatus_Running
+    | FleetOperationStatus_Paused
+    | FleetOperationStatus_Completed
+    | FleetOperationStatus_Failed
+    | FleetOperationStatus_Cancelled
+)
+
+
+class GetFleetOperationOutput_NotFound(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["NotFound"] = "NotFound"
+
+
+class GetFleetOperationOutput_Found(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["Found"] = "Found"
+    summary: FleetOperationSummary = pydantic.Field(description="Summary.")
+    selector: FleetOperationTargetSelector = pydantic.Field(
+        description="Target selector."
+    )
+    stages: list[FleetOperationStage] = pydantic.Field(description="Stages.")
+    steps: list[_schema_devices.DeviceOperationStep] = pydantic.Field(
+        description="Ordered steps for each selected device."
+    )
+
+    def payload(self) -> "FleetOperationDetails":
+        return FleetOperationDetails(
+            summary=self.summary,
+            selector=self.selector,
+            stages=self.stages,
+            steps=self.steps,
+        )
+
+
+# Output of getting fleet operation details.
+type GetFleetOperationOutput = Annotated[
+    GetFleetOperationOutput_NotFound | GetFleetOperationOutput_Found,
+    pydantic.Discriminator("result"),
+]
+
+
+class AdvanceFleetOperationStageOutput_Advanced(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["Advanced"] = "Advanced"
+
+
+class AdvanceFleetOperationStageOutput_AlreadyFinalStage(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["AlreadyFinalStage"] = "AlreadyFinalStage"
+
+
+class AdvanceFleetOperationStageOutput_GuardBlocked(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["GuardBlocked"] = "GuardBlocked"
+    min_success_percent: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Required success percentage.",
+        validation_alias="minSuccessPercent",
+        serialization_alias="minSuccessPercent",
+    )
+    success_percent: _sidex.U32 = pydantic.Field(
+        description="Actual success percentage.",
+        validation_alias="successPercent",
+        serialization_alias="successPercent",
+    )
+    max_failure_percent: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum allowed failure percentage.",
+        validation_alias="maxFailurePercent",
+        serialization_alias="maxFailurePercent",
+    )
+    failure_percent: _sidex.U32 = pydantic.Field(
+        description="Actual failure percentage.",
+        validation_alias="failurePercent",
+        serialization_alias="failurePercent",
+    )
+    gates: list[FleetOperationStageGateStatus] = pydantic.Field(
+        description="Observed gate results."
+    )
+
+    def payload(self) -> "FleetOperationStageGuardStatus":
+        return FleetOperationStageGuardStatus(
+            min_success_percent=self.min_success_percent,
+            success_percent=self.success_percent,
+            max_failure_percent=self.max_failure_percent,
+            failure_percent=self.failure_percent,
+            gates=self.gates,
+        )
+
+
+# Output of advancing a fleet operation stage.
+type AdvanceFleetOperationStageOutput = Annotated[
+    AdvanceFleetOperationStageOutput_Advanced
+    | AdvanceFleetOperationStageOutput_AlreadyFinalStage
+    | AdvanceFleetOperationStageOutput_GuardBlocked,
+    pydantic.Discriminator("result"),
 ]

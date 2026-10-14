@@ -33,16 +33,55 @@ _SyncLogHandler = Callable[[DeviceCommandDeviceFrame_Log], None]
 _AsyncLogHandler = Callable[[DeviceCommandDeviceFrame_Log], None | Awaitable[None]]
 
 
+def _validated_base_url(base_url: str, *, dangerous_allow_plaintext: bool) -> str:
+    try:
+        url = httpx.URL(base_url)
+    except (TypeError, ValueError) as error:
+        raise ValueError("base_url must be an absolute HTTPS URL") from error
+    if url.scheme == "https":
+        pass
+    elif url.scheme == "http" and dangerous_allow_plaintext:
+        pass
+    elif url.scheme == "http":
+        raise ValueError(
+            "refusing to send a Nexigon token over plaintext HTTP; "
+            "set dangerous_allow_plaintext=True only for a trusted development network"
+        )
+    else:
+        raise ValueError("base_url must use HTTPS")
+    if url.host is None:
+        raise ValueError("base_url must be an absolute HTTPS URL")
+    return base_url.rstrip("/")
+
+
 def _raise_api_error(response: httpx.Response) -> NoReturn:
     error = _ACTION_ERROR_ADAPTER.validate_json(response.content)
-    raise ActionApiError(error, response.status_code)
+    retry_after_seconds = error.retry_after_seconds
+    retry_after = response.headers.get("Retry-After")
+    if retry_after is not None:
+        try:
+            parsed_retry_after = int(retry_after)
+        except ValueError:
+            pass
+        else:
+            if parsed_retry_after >= 0:
+                retry_after_seconds = parsed_retry_after
+    raise ActionApiError(error, response.status_code, retry_after_seconds)
 
 
 class Client(_SyncExecuteMixin):
     """Synchronous Nexigon Hub API client."""
 
-    def __init__(self, base_url: str, *, token: str) -> None:
-        self._base_url = base_url.rstrip("/")
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        token: str,
+        dangerous_allow_plaintext: bool = False,
+    ) -> None:
+        self._base_url = _validated_base_url(
+            base_url, dangerous_allow_plaintext=dangerous_allow_plaintext
+        )
         self._token = token
         self._http = httpx.Client(
             base_url=self._base_url + "/api/v1/",
@@ -118,8 +157,16 @@ class Client(_SyncExecuteMixin):
 class AsyncClient(_AsyncExecuteMixin):
     """Asynchronous Nexigon Hub API client."""
 
-    def __init__(self, base_url: str, *, token: str) -> None:
-        self._base_url = base_url.rstrip("/")
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        token: str,
+        dangerous_allow_plaintext: bool = False,
+    ) -> None:
+        self._base_url = _validated_base_url(
+            base_url, dangerous_allow_plaintext=dangerous_allow_plaintext
+        )
         self._token = token
         self._http = httpx.AsyncClient(
             base_url=self._base_url + "/api/v1/",

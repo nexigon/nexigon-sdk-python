@@ -7,10 +7,12 @@ from typing import Annotated, Generic, Literal, TYPE_CHECKING, TypeVar, Union  #
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 T = TypeVar("T")
 
 
-class ActionError(pydantic.BaseModel):
+class ActionError(_sidex.Model):
     """Action error."""
 
     model_config = pydantic.ConfigDict(
@@ -19,6 +21,12 @@ class ActionError(pydantic.BaseModel):
 
     kind: ActionErrorKind = pydantic.Field(description="Kind of the error.")
     message: str = pydantic.Field(description="Message of the error.")
+    retry_after_seconds: _sidex.U64 | None = pydantic.Field(
+        default=None,
+        description="Minimum number of seconds to wait before retrying.",
+        validation_alias="retryAfterSeconds",
+        serialization_alias="retryAfterSeconds",
+    )
 
 
 class ActionErrorKind_Invalid(pydantic.RootModel[Literal["Invalid"]]):
@@ -26,6 +34,18 @@ class ActionErrorKind_Invalid(pydantic.RootModel[Literal["Invalid"]]):
 
 
 class ActionErrorKind_Forbidden(pydantic.RootModel[Literal["Forbidden"]]):
+    pass
+
+
+class ActionErrorKind_OperationAuthorizationRequired(
+    pydantic.RootModel[Literal["OperationAuthorizationRequired"]]
+):
+    pass
+
+
+class ActionErrorKind_MfaEnrollmentRequired(
+    pydantic.RootModel[Literal["MfaEnrollmentRequired"]]
+):
     pass
 
 
@@ -37,16 +57,23 @@ class ActionErrorKind_RateLimited(pydantic.RootModel[Literal["RateLimited"]]):
     pass
 
 
+class ActionErrorKind_Unavailable(pydantic.RootModel[Literal["Unavailable"]]):
+    pass
+
+
 # Kind of an action error.
 type ActionErrorKind = (
     ActionErrorKind_Invalid
     | ActionErrorKind_Forbidden
+    | ActionErrorKind_OperationAuthorizationRequired
+    | ActionErrorKind_MfaEnrollmentRequired
     | ActionErrorKind_Internal
     | ActionErrorKind_RateLimited
+    | ActionErrorKind_Unavailable
 )
 
 
-class ActionResult_Ok(pydantic.BaseModel, Generic[T]):
+class ActionResult_Ok(_sidex.Model, Generic[T]):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -58,7 +85,7 @@ class ActionResult_Ok(pydantic.BaseModel, Generic[T]):
         return self.value
 
 
-class ActionResult_Error(pydantic.BaseModel):
+class ActionResult_Error(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )

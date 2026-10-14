@@ -52,7 +52,7 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
     ),
     users.ChangeUserPasswordAction: (
         "users_ChangePassword",
-        pydantic.TypeAdapter(users.ChangeUserPasswordOutput),
+        pydantic.TypeAdapter(outputs.Empty),
     ),
     users.ResetUserPasswordAction: (
         "users_ResetPassword",
@@ -102,10 +102,7 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "users_TerminateSession",
         pydantic.TypeAdapter(outputs.Empty),
     ),
-    users.RegisterUserAction: (
-        "users_Register",
-        pydantic.TypeAdapter(users.RegisterUserOutput),
-    ),
+    users.RegisterUserAction: ("users_Register", pydantic.TypeAdapter(outputs.Empty)),
     users.ResendRegistrationEmailAction: (
         "users_ResendRegistrationEmail",
         pydantic.TypeAdapter(outputs.Empty),
@@ -170,6 +167,26 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "organizations_QueryAuditLog",
         pydantic.TypeAdapter(organizations.QueryOrganizationAuditLogOutput),
     ),
+    devices.QueryDeviceGroupsAction: (
+        "groups_Query",
+        pydantic.TypeAdapter(devices.QueryDeviceGroupsOutput),
+    ),
+    devices.CreateDeviceGroupAction: (
+        "groups_Create",
+        pydantic.TypeAdapter(devices.DeviceGroup),
+    ),
+    devices.UpdateDeviceGroupAction: (
+        "groups_Update",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    devices.DeleteDeviceGroupAction: (
+        "groups_Delete",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    devices.UpdateDeviceGroupsAction: (
+        "devices_UpdateGroups",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
     projects.QueryProjectsAction: (
         "projects_Query",
         pydantic.TypeAdapter(projects.QueryProjectsOutput),
@@ -214,6 +231,22 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "projects_SetDeploymentTokenFlags",
         pydantic.TypeAdapter(outputs.Empty),
     ),
+    projects.QueryDevicePairingKeysAction: (
+        "projects_QueryDevicePairingKeys",
+        pydantic.TypeAdapter(projects.QueryDevicePairingKeysOutput),
+    ),
+    projects.CreateDevicePairingKeyAction: (
+        "projects_CreateDevicePairingKey",
+        pydantic.TypeAdapter(projects.CreateDevicePairingKeyOutput),
+    ),
+    projects.RevokeDevicePairingKeyAction: (
+        "projects_RevokeDevicePairingKey",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    projects.RedeemDevicePairingKeyAction: (
+        "projects_RedeemDevicePairingKey",
+        pydantic.TypeAdapter(projects.RedeemDevicePairingKeyOutput),
+    ),
     projects.QueryAuditLogEventsAction: (
         "projects_QueryAuditLog",
         pydantic.TypeAdapter(projects.QueryAuditLogEventsOutput),
@@ -224,6 +257,18 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
     ),
     projects.RemoveProjectRepositoryAction: (
         "projects_UnlinkRepository",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    projects.QueryPropertySchemasAction: (
+        "projects_QueryPropertySchemas",
+        pydantic.TypeAdapter(projects.QueryPropertySchemasOutput),
+    ),
+    projects.SetPropertySchemaAction: (
+        "projects_SetPropertySchema",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    projects.RemovePropertySchemaAction: (
+        "projects_RemovePropertySchema",
         pydantic.TypeAdapter(outputs.Empty),
     ),
     projects.GetProjectOtlpConfigAction: (
@@ -347,6 +392,70 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "fleet_QueryComputedPropertyDefinitions",
         pydantic.TypeAdapter(fleet.QueryComputedFleetPropertyDefinitionsOutput),
     ),
+    fleet.QueryFleetOperationsAction: (
+        "fleet_QueryOperations",
+        pydantic.TypeAdapter(fleet.QueryFleetOperationsOutput),
+    ),
+    fleet.GetFleetOperationAction: (
+        "fleet_GetOperation",
+        pydantic.TypeAdapter(fleet.GetFleetOperationOutput),
+    ),
+    fleet.CreateFleetOperationAction: (
+        "fleet_CreateOperation",
+        pydantic.TypeAdapter(fleet.CreateFleetOperationOutput),
+    ),
+    fleet.StartFleetOperationAction: (
+        "fleet_StartOperation",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    fleet.AdvanceFleetOperationStageAction: (
+        "fleet_AdvanceOperationStage",
+        pydantic.TypeAdapter(fleet.AdvanceFleetOperationStageOutput),
+    ),
+    fleet.QueryFleetOperationTargetsAction: (
+        "fleet_QueryOperationTargets",
+        pydantic.TypeAdapter(fleet.QueryFleetOperationTargetsOutput),
+    ),
+    fleet.QueryFleetOperationSelectionErrorsAction: (
+        "fleet_QueryOperationSelectionErrors",
+        pydantic.TypeAdapter(fleet.QueryFleetOperationSelectionErrorsOutput),
+    ),
+    fleet.PauseFleetOperationAction: (
+        "fleet_PauseOperation",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    fleet.CancelFleetOperationAction: (
+        "fleet_CancelOperation",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    devices.QueryDeviceOperationsAction: (
+        "devices_QueryOperations",
+        pydantic.TypeAdapter(devices.QueryDeviceOperationsOutput),
+    ),
+    devices.GetDeviceOperationAction: (
+        "devices_GetOperation",
+        pydantic.TypeAdapter(devices.GetDeviceOperationOutput),
+    ),
+    devices.CreateDeviceOperationAction: (
+        "devices_CreateOperation",
+        pydantic.TypeAdapter(devices.CreateDeviceOperationOutput),
+    ),
+    devices.StartDeviceOperationAction: (
+        "devices_StartOperation",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    devices.CancelDeviceOperationAction: (
+        "devices_CancelOperation",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    devices.ClaimDeviceOperationWorkAction: (
+        "devices_ClaimOperationWork",
+        pydantic.TypeAdapter(devices.ClaimDeviceOperationWorkOutput),
+    ),
+    devices.ReportDeviceOperationStepAction: (
+        "devices_ReportOperationStep",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
     repositories.ResolveRepositoryNameAction: (
         "repositories_ResolveName",
         pydantic.TypeAdapter(repositories.ResolveRepositoryNameOutput),
@@ -383,6 +492,14 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "repositories_QueryAssets",
         pydantic.TypeAdapter(repositories.QueryRepositoryAssetsOutput),
     ),
+    repositories.SetRepositoryAssetCleanupAction: (
+        "repositories_SetAssetCleanup",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    repositories.GetAssetReferencesAction: (
+        "repositories_GetAssetReferences",
+        pydantic.TypeAdapter(repositories.GetAssetReferencesOutput),
+    ),
     repositories.QueryRepositoryProjectsAction: (
         "repositories_QueryLinkedProjects",
         pydantic.TypeAdapter(repositories.QueryRepositoryProjectsOutput),
@@ -413,6 +530,10 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
     ),
     repositories.SetPackageMetadataAction: (
         "repositories_SetPackageMetadata",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    repositories.SetPackagePresentationAction: (
+        "repositories_SetPackagePresentation",
         pydantic.TypeAdapter(outputs.Empty),
     ),
     repositories.AddPackageAssetAction: (
@@ -447,6 +568,18 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "repositories_DeleteVersion",
         pydantic.TypeAdapter(outputs.Empty),
     ),
+    repositories.SealPackageVersionAction: (
+        "repositories_SealVersion",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    repositories.SetPackageVersionRetentionAction: (
+        "repositories_SetPackageVersionRetention",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    repositories.SetPackageVersionDeletionScheduleAction: (
+        "repositories_SetVersionDeletionSchedule",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
     repositories.SetPackageVersionNameAction: (
         "repositories_SetVersionName",
         pydantic.TypeAdapter(outputs.Empty),
@@ -479,6 +612,22 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "repositories_ResolveVersionAssetByPath",
         pydantic.TypeAdapter(repositories.ResolvePackageVersionAssetByPathOutput),
     ),
+    organizations.SetOrganizationS3ConfigAction: (
+        "organizations_SetS3Config",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    organizations.GetOrganizationS3ConfigAction: (
+        "organizations_GetS3Config",
+        pydantic.TypeAdapter(organizations.GetOrganizationS3ConfigOutput),
+    ),
+    organizations.DeleteOrganizationS3ConfigAction: (
+        "organizations_DeleteS3Config",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    repositories.DeleteRepositoryS3ConfigAction: (
+        "repositories_DeleteS3Config",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
     repositories.SetRepositoryS3ConfigAction: (
         "repositories_SetS3Config",
         pydantic.TypeAdapter(outputs.Empty),
@@ -506,6 +655,10 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
     repositories.IssueAssetUploadUrlAction: (
         "repositories_IssueAssetUploadUrl",
         pydantic.TypeAdapter(repositories.IssueAssetUploadUrlOutput),
+    ),
+    repositories.FinalizeAssetUploadAction: (
+        "repositories_FinalizeAssetUpload",
+        pydantic.TypeAdapter(outputs.Empty),
     ),
     repositories.QueryAuditLogEventsAction: (
         "repositories_QueryAuditLog",
@@ -594,16 +747,26 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(self, action: users.SetUserPasswordAction) -> outputs.Empty:
-        """Set the password of a user."""
+        """Set the password of a user.
+
+        Admin-only operation that sets the password without requiring the current
+        one. All existing sessions of the user are invalidated."""
         ...
 
     @overload
-    def execute(self, action: users.SetUserEmailAction) -> users.SetUserEmailOutput: ...
+    def execute(self, action: users.SetUserEmailAction) -> users.SetUserEmailOutput:
+        """Set the email address of a user.
+
+        Admin-only operation that updates the address without verification."""
+        ...
 
     @overload
-    def execute(
-        self, action: users.ChangeUserPasswordAction
-    ) -> users.ChangeUserPasswordOutput: ...
+    def execute(self, action: users.ChangeUserPasswordAction) -> outputs.Empty:
+        """Change the password of the current user.
+
+        Requires account credentials in `authorization`, even if the user is
+        already authenticated."""
+        ...
 
     @overload
     def execute(self, action: users.ResetUserPasswordAction) -> outputs.Empty:
@@ -622,12 +785,19 @@ class _SyncExecuteMixin:
     @overload
     def execute(
         self, action: users.InitiateUserEmailChangeAction
-    ) -> users.InitiateUserEmailChangeOutput: ...
+    ) -> users.InitiateUserEmailChangeOutput:
+        """Initiate an email-address change for the current user.
+
+        Requires account credentials in `authorization`. On success, a verification
+        link is sent to the new address and a notification is sent to the current address."""
+        ...
 
     @overload
     def execute(
         self, action: users.CompleteUserEmailChangeAction
-    ) -> users.CompleteUserEmailChangeOutput: ...
+    ) -> users.CompleteUserEmailChangeOutput:
+        """Complete an email-address change using a verification token."""
+        ...
 
     @overload
     def execute(
@@ -685,7 +855,7 @@ class _SyncExecuteMixin:
         ...
 
     @overload
-    def execute(self, action: users.RegisterUserAction) -> users.RegisterUserOutput:
+    def execute(self, action: users.RegisterUserAction) -> outputs.Empty:
         """Register a new user with an email and password."""
         ...
 
@@ -797,6 +967,42 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(
+        self, action: devices.QueryDeviceGroupsAction
+    ) -> devices.QueryDeviceGroupsOutput:
+        """List a project's group catalog, including groups without assignments."""
+        ...
+
+    @overload
+    def execute(self, action: devices.CreateDeviceGroupAction) -> devices.DeviceGroup:
+        """Create a group. Case-insensitive name collisions are rejected."""
+        ...
+
+    @overload
+    def execute(self, action: devices.UpdateDeviceGroupAction) -> outputs.Empty:
+        """Replace group metadata while retaining its identity and assignments."""
+        ...
+
+    @overload
+    def execute(self, action: devices.DeleteDeviceGroupAction) -> outputs.Empty:
+        """Delete a group and its assignments.
+
+        Existing operation selectors retain the group identity and continue evaluating
+        membership. A deleted group is absent from every device."""
+        ...
+
+    @overload
+    def execute(self, action: devices.UpdateDeviceGroupsAction) -> outputs.Empty:
+        """Atomically add and remove memberships on explicit devices in one project.
+
+        Adding an existing membership or removing an absent one is a no-op. A group
+        cannot appear in both lists. Unrelated memberships are preserved. All devices
+        and groups must belong to the project; otherwise no memberships change.
+        Device credentials cannot change groups. Removing a membership does not cancel
+        work that an operation has already assigned to the device."""
+        ...
+
+    @overload
+    def execute(
         self, action: projects.QueryProjectsAction
     ) -> projects.QueryProjectsOutput:
         """Query the projects of the instance."""
@@ -866,6 +1072,32 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(
+        self, action: projects.QueryDevicePairingKeysAction
+    ) -> projects.QueryDevicePairingKeysOutput:
+        """Query the device pairing keys of a project."""
+        ...
+
+    @overload
+    def execute(
+        self, action: projects.CreateDevicePairingKeyAction
+    ) -> projects.CreateDevicePairingKeyOutput:
+        """Create a device pairing key."""
+        ...
+
+    @overload
+    def execute(self, action: projects.RevokeDevicePairingKeyAction) -> outputs.Empty:
+        """Revoke an unused device pairing key."""
+        ...
+
+    @overload
+    def execute(
+        self, action: projects.RedeemDevicePairingKeyAction
+    ) -> projects.RedeemDevicePairingKeyOutput:
+        """Redeem a device pairing key."""
+        ...
+
+    @overload
+    def execute(
         self, action: projects.QueryAuditLogEventsAction
     ) -> projects.QueryAuditLogEventsOutput:
         """Query the audit log of the project."""
@@ -883,14 +1115,41 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(
+        self, action: projects.QueryPropertySchemasAction
+    ) -> projects.QueryPropertySchemasOutput:
+        """List project definitions and the read-only built-in definitions."""
+        ...
+
+    @overload
+    def execute(self, action: projects.SetPropertySchemaAction) -> outputs.Empty:
+        """Create or replace a project schema without validating existing property values.
+
+        Requires permission to manage project settings. Built-in definitions are read-only.
+        The schema must be a JSON object or boolean. Editors report unsupported or invalid
+        schemas and allow explicit overrides; APIs do not enforce schemas on property writes."""
+        ...
+
+    @overload
+    def execute(self, action: projects.RemovePropertySchemaAction) -> outputs.Empty:
+        """Remove a project definition without changing property values.
+
+        Requires permission to manage project settings. Built-in definitions are read-only."""
+        ...
+
+    @overload
+    def execute(
         self, action: projects.GetProjectOtlpConfigAction
     ) -> projects.GetProjectOtlpConfigOutput:
-        """Get the OTLP event forwarding configuration for a project."""
+        """**Unstable (feature `otlp_export`).**
+
+        Get the OTLP event forwarding configuration for a project."""
         ...
 
     @overload
     def execute(self, action: projects.SetProjectOtlpConfigAction) -> outputs.Empty:
-        """Set the OTLP event forwarding configuration for a project."""
+        """**Unstable (feature `otlp_export`).**
+
+        Set the OTLP event forwarding configuration for a project."""
         ...
 
     @overload
@@ -1043,7 +1302,9 @@ class _SyncExecuteMixin:
     def execute(
         self, action: devices.QueryDeviceCommandsAction
     ) -> devices.QueryDeviceCommandsOutput:
-        """Query the on-demand commands supported by a device."""
+        """**Unstable (feature `device_commands`).**
+
+        Query the on-demand commands supported by a device."""
         ...
 
     @overload
@@ -1077,14 +1338,144 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(self, action: fleet.DefineComputedFleetPropertyAction) -> outputs.Empty:
-        """Define a computed fleet property."""
+        """**Unstable (feature `fleet_computed_properties`).**
+
+        Define a computed fleet property."""
         ...
 
     @overload
     def execute(
         self, action: fleet.QueryComputedFleetPropertyDefinitionsAction
     ) -> fleet.QueryComputedFleetPropertyDefinitionsOutput:
-        """Query computed fleet property definitions for a project."""
+        """**Unstable (feature `fleet_computed_properties`).**
+
+        Query computed fleet property definitions for a project."""
+        ...
+
+    @overload
+    def execute(
+        self, action: fleet.QueryFleetOperationsAction
+    ) -> fleet.QueryFleetOperationsOutput:
+        """Query fleet operations for a project."""
+        ...
+
+    @overload
+    def execute(
+        self, action: fleet.GetFleetOperationAction
+    ) -> fleet.GetFleetOperationOutput:
+        """Get fleet operation details."""
+        ...
+
+    @overload
+    def execute(
+        self, action: fleet.CreateFleetOperationAction
+    ) -> fleet.CreateFleetOperationOutput:
+        """Create a fleet operation."""
+        ...
+
+    @overload
+    def execute(self, action: fleet.StartFleetOperationAction) -> outputs.Empty:
+        """Start a draft fleet operation."""
+        ...
+
+    @overload
+    def execute(
+        self, action: fleet.AdvanceFleetOperationStageAction
+    ) -> fleet.AdvanceFleetOperationStageOutput:
+        """Advance the fleet operation to the next stage."""
+        ...
+
+    @overload
+    def execute(
+        self, action: fleet.QueryFleetOperationTargetsAction
+    ) -> fleet.QueryFleetOperationTargetsOutput:
+        """Query the devices a fleet operation applies to, its *targets*.
+
+        A target is a device the selector matched, reported together with the device operation
+        carrying out the work on it and the stage that gates it. Devices in stages the rollout
+        has not reached yet are included, and are `Pending`.
+
+        This is a separate query rather than part of the operation's details because the list
+        grows with the fleet, and most reads of an operation do not want it."""
+        ...
+
+    @overload
+    def execute(
+        self, action: fleet.QueryFleetOperationSelectionErrorsAction
+    ) -> fleet.QueryFleetOperationSelectionErrorsOutput:
+        """Query the devices whose selector evaluation failed for a fleet operation.
+
+        Normally empty. A non-empty result means the selector could not be evaluated against
+        those devices, so the operation cannot tell whether it applies to them."""
+        ...
+
+    @overload
+    def execute(self, action: fleet.PauseFleetOperationAction) -> outputs.Empty:
+        """Pause a running fleet operation.
+
+        Pausing halts the rollout without undoing any of it. No new devices are enrolled, no
+        device operation makes progress, and devices are handed no new work. Nothing is
+        cancelled and no state is lost.
+
+        A device that already took a work item and has carried it out can still report the
+        result, and the result is recorded: pausing stops new work being generated, it does not
+        discard work that was genuinely done.
+
+        Resume with `fleet_StartOperation`, which picks the rollout up exactly where it left
+        off. Time spent paused does not count towards step timeouts: the clock on any step that
+        was in flight restarts on resume, so a long pause cannot time work out."""
+        ...
+
+    @overload
+    def execute(self, action: fleet.CancelFleetOperationAction) -> outputs.Empty:
+        """Cancel a fleet operation."""
+        ...
+
+    @overload
+    def execute(
+        self, action: devices.QueryDeviceOperationsAction
+    ) -> devices.QueryDeviceOperationsOutput:
+        """Query device operations for a device."""
+        ...
+
+    @overload
+    def execute(
+        self, action: devices.GetDeviceOperationAction
+    ) -> devices.GetDeviceOperationOutput:
+        """Get device operation details."""
+        ...
+
+    @overload
+    def execute(
+        self, action: devices.CreateDeviceOperationAction
+    ) -> devices.CreateDeviceOperationOutput:
+        """Create a device operation."""
+        ...
+
+    @overload
+    def execute(self, action: devices.StartDeviceOperationAction) -> outputs.Empty:
+        """Start a pending device operation."""
+        ...
+
+    @overload
+    def execute(self, action: devices.CancelDeviceOperationAction) -> outputs.Empty:
+        """Cancel a device operation."""
+        ...
+
+    @overload
+    def execute(
+        self, action: devices.ClaimDeviceOperationWorkAction
+    ) -> devices.ClaimDeviceOperationWorkOutput:
+        """Atomically claim device operation work for a device."""
+        ...
+
+    @overload
+    def execute(self, action: devices.ReportDeviceOperationStepAction) -> outputs.Empty:
+        """Report the result of a device operation step.
+
+        Repeating a report after it was already applied is a successful no-op. A report whose
+        claim has been superseded is also ignored, so an expired worker cannot overwrite the
+        current attempt."""
         ...
 
     @overload
@@ -1130,7 +1521,11 @@ class _SyncExecuteMixin:
     @overload
     def execute(
         self, action: repositories.SetRepositorySlugAction
-    ) -> repositories.SetRepositorySlugOutput: ...
+    ) -> repositories.SetRepositorySlugOutput:
+        """Set the slug of a repository.
+
+        Note: Setting the slug requires the `public_repositories` subscription feature."""
+        ...
 
     @overload
     def execute(
@@ -1144,6 +1539,20 @@ class _SyncExecuteMixin:
         self, action: repositories.QueryRepositoryAssetsAction
     ) -> repositories.QueryRepositoryAssetsOutput:
         """Query the assets of a repository."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.SetRepositoryAssetCleanupAction
+    ) -> outputs.Empty:
+        """Configure automatic cleanup. Requires permission to manage repository settings."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.GetAssetReferencesAction
+    ) -> repositories.GetAssetReferencesOutput:
+        """List the package attachments retaining a repository asset."""
         ...
 
     @overload
@@ -1194,6 +1603,14 @@ class _SyncExecuteMixin:
     @overload
     def execute(self, action: repositories.SetPackageMetadataAction) -> outputs.Empty:
         """Set metadata on a package."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.SetPackagePresentationAction
+    ) -> outputs.Empty:
+        """Replace display text and optionally change the image.
+        Omitted display name and description are cleared; an omitted image is preserved."""
         ...
 
     @overload
@@ -1254,6 +1671,30 @@ class _SyncExecuteMixin:
         ...
 
     @overload
+    def execute(self, action: repositories.SealPackageVersionAction) -> outputs.Empty:
+        """Permanently seal a version. Requires permission to manage versions.
+        Sealing cancels scheduled deletion and blocks changes to the name, metadata,
+        and attachments, as well as deletion of the version, package, or repository.
+        Tags remain editable. Sealing cannot be reversed."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.SetPackageVersionRetentionAction
+    ) -> outputs.Empty:
+        """Replace the package retention policy. Requires permission to manage versions."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.SetPackageVersionDeletionScheduleAction
+    ) -> outputs.Empty:
+        """Schedule or cancel automatic deletion. Requires permission to manage versions.
+        Deletion removes the version and all tags, including locked tags. It does not
+        check device installations. Unused assets follow the repository cleanup policy."""
+        ...
+
+    @overload
     def execute(
         self, action: repositories.SetPackageVersionNameAction
     ) -> outputs.Empty:
@@ -1307,6 +1748,34 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(
+        self, action: organizations.SetOrganizationS3ConfigAction
+    ) -> outputs.Empty:
+        """Organization S3 defaults for repositories without their own configuration."""
+        ...
+
+    @overload
+    def execute(
+        self, action: organizations.GetOrganizationS3ConfigAction
+    ) -> organizations.GetOrganizationS3ConfigOutput:
+        """Get organization storage settings. Secret credentials are never returned."""
+        ...
+
+    @overload
+    def execute(
+        self, action: organizations.DeleteOrganizationS3ConfigAction
+    ) -> outputs.Empty:
+        """Remove organization storage defaults without deleting stored objects."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.DeleteRepositoryS3ConfigAction
+    ) -> outputs.Empty:
+        """Remove a repository override and use organization storage when configured."""
+        ...
+
+    @overload
+    def execute(
         self, action: repositories.SetRepositoryS3ConfigAction
     ) -> outputs.Empty:
         """Set the S3 configuration for the repository."""
@@ -1335,7 +1804,8 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(self, action: repositories.DeleteAssetAction) -> outputs.Empty:
-        """Delete an asset."""
+        """Schedule deletion of an unused asset. Referenced assets are rejected.
+        The asset remains visible until object-storage deletion completes."""
         ...
 
     @overload
@@ -1353,6 +1823,13 @@ class _SyncExecuteMixin:
         ...
 
     @overload
+    def execute(self, action: repositories.FinalizeAssetUploadAction) -> outputs.Empty:
+        """Verify an uploaded object and make its asset available.
+
+        This action is idempotent: finalizing an already available asset succeeds."""
+        ...
+
+    @overload
     def execute(
         self, action: repositories.QueryAuditLogEventsAction
     ) -> repositories.QueryAuditLogEventsOutput:
@@ -1363,7 +1840,9 @@ class _SyncExecuteMixin:
     def execute(
         self, action: vulnerabilities.IndexVersionDocumentsAction
     ) -> vulnerabilities.IndexVersionDocumentsOutput:
-        """Trigger indexing of every CycloneDX document referenced by the
+        """**Unstable (feature `vulnerability_management`).**
+
+        Trigger indexing of every CycloneDX or SPDX document referenced by the
         version's artifact assets via `relations.{sbom,vdr,vex}`.
 
         The hub fetches the referenced documents from the repository's S3
@@ -1375,7 +1854,9 @@ class _SyncExecuteMixin:
     def execute(
         self, action: vulnerabilities.IndexPackageDocumentsAction
     ) -> vulnerabilities.IndexPackageDocumentsOutput:
-        """Trigger indexing of every CycloneDX document referenced by the
+        """**Unstable (feature `vulnerability_management`).**
+
+        Trigger indexing of every CycloneDX or SPDX document referenced by the
         package's metadata via `relations.{vex}` (typically just VEX).
 
         Mirrors `IndexVersionDocumentsAction`. Used after attaching a new
@@ -1386,7 +1867,9 @@ class _SyncExecuteMixin:
     def execute(
         self, action: vulnerabilities.GetVersionVulnerabilityOverviewAction
     ) -> vulnerabilities.GetVersionVulnerabilityOverviewOutput:
-        """Get the vulnerability overview for a package version: artifact list,
+        """**Unstable (feature `vulnerability_management`).**
+
+        Get the vulnerability overview for a package version: artifact list,
         SBOM/VDR/VEX descriptors per artifact, package-level VEX, and
         (when indexing is enabled) the rolled-up severity summary."""
         ...
@@ -1395,13 +1878,17 @@ class _SyncExecuteMixin:
     def execute(
         self, action: vulnerabilities.QueryPackageVersionComponentsAction
     ) -> vulnerabilities.QueryPackageVersionComponentsOutput:
-        """Query the components extracted from a package version's SBOMs."""
+        """**Unstable (feature `vulnerability_management`).**
+
+        Query the components extracted from a package version's SBOMs."""
         ...
 
     @overload
     def execute(
         self, action: vulnerabilities.QueryPackageVersionFindingsAction
-    ) -> vulnerabilities.QueryPackageVersionFindingsOutput: ...
+    ) -> vulnerabilities.QueryPackageVersionFindingsOutput:
+        """**Unstable (feature `vulnerability_management`).**"""
+        ...
 
     @overload
     def execute(
@@ -1496,18 +1983,28 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(self, action: users.SetUserPasswordAction) -> outputs.Empty:
-        """Set the password of a user."""
+        """Set the password of a user.
+
+        Admin-only operation that sets the password without requiring the current
+        one. All existing sessions of the user are invalidated."""
         ...
 
     @overload
     async def execute(
         self, action: users.SetUserEmailAction
-    ) -> users.SetUserEmailOutput: ...
+    ) -> users.SetUserEmailOutput:
+        """Set the email address of a user.
+
+        Admin-only operation that updates the address without verification."""
+        ...
 
     @overload
-    async def execute(
-        self, action: users.ChangeUserPasswordAction
-    ) -> users.ChangeUserPasswordOutput: ...
+    async def execute(self, action: users.ChangeUserPasswordAction) -> outputs.Empty:
+        """Change the password of the current user.
+
+        Requires account credentials in `authorization`, even if the user is
+        already authenticated."""
+        ...
 
     @overload
     async def execute(self, action: users.ResetUserPasswordAction) -> outputs.Empty:
@@ -1526,12 +2023,19 @@ class _AsyncExecuteMixin:
     @overload
     async def execute(
         self, action: users.InitiateUserEmailChangeAction
-    ) -> users.InitiateUserEmailChangeOutput: ...
+    ) -> users.InitiateUserEmailChangeOutput:
+        """Initiate an email-address change for the current user.
+
+        Requires account credentials in `authorization`. On success, a verification
+        link is sent to the new address and a notification is sent to the current address."""
+        ...
 
     @overload
     async def execute(
         self, action: users.CompleteUserEmailChangeAction
-    ) -> users.CompleteUserEmailChangeOutput: ...
+    ) -> users.CompleteUserEmailChangeOutput:
+        """Complete an email-address change using a verification token."""
+        ...
 
     @overload
     async def execute(
@@ -1589,9 +2093,7 @@ class _AsyncExecuteMixin:
         ...
 
     @overload
-    async def execute(
-        self, action: users.RegisterUserAction
-    ) -> users.RegisterUserOutput:
+    async def execute(self, action: users.RegisterUserAction) -> outputs.Empty:
         """Register a new user with an email and password."""
         ...
 
@@ -1707,6 +2209,44 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(
+        self, action: devices.QueryDeviceGroupsAction
+    ) -> devices.QueryDeviceGroupsOutput:
+        """List a project's group catalog, including groups without assignments."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.CreateDeviceGroupAction
+    ) -> devices.DeviceGroup:
+        """Create a group. Case-insensitive name collisions are rejected."""
+        ...
+
+    @overload
+    async def execute(self, action: devices.UpdateDeviceGroupAction) -> outputs.Empty:
+        """Replace group metadata while retaining its identity and assignments."""
+        ...
+
+    @overload
+    async def execute(self, action: devices.DeleteDeviceGroupAction) -> outputs.Empty:
+        """Delete a group and its assignments.
+
+        Existing operation selectors retain the group identity and continue evaluating
+        membership. A deleted group is absent from every device."""
+        ...
+
+    @overload
+    async def execute(self, action: devices.UpdateDeviceGroupsAction) -> outputs.Empty:
+        """Atomically add and remove memberships on explicit devices in one project.
+
+        Adding an existing membership or removing an absent one is a no-op. A group
+        cannot appear in both lists. Unrelated memberships are preserved. All devices
+        and groups must belong to the project; otherwise no memberships change.
+        Device credentials cannot change groups. Removing a membership does not cancel
+        work that an operation has already assigned to the device."""
+        ...
+
+    @overload
+    async def execute(
         self, action: projects.QueryProjectsAction
     ) -> projects.QueryProjectsOutput:
         """Query the projects of the instance."""
@@ -1780,6 +2320,34 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(
+        self, action: projects.QueryDevicePairingKeysAction
+    ) -> projects.QueryDevicePairingKeysOutput:
+        """Query the device pairing keys of a project."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: projects.CreateDevicePairingKeyAction
+    ) -> projects.CreateDevicePairingKeyOutput:
+        """Create a device pairing key."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: projects.RevokeDevicePairingKeyAction
+    ) -> outputs.Empty:
+        """Revoke an unused device pairing key."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: projects.RedeemDevicePairingKeyAction
+    ) -> projects.RedeemDevicePairingKeyOutput:
+        """Redeem a device pairing key."""
+        ...
+
+    @overload
+    async def execute(
         self, action: projects.QueryAuditLogEventsAction
     ) -> projects.QueryAuditLogEventsOutput:
         """Query the audit log of the project."""
@@ -1801,16 +2369,45 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(
+        self, action: projects.QueryPropertySchemasAction
+    ) -> projects.QueryPropertySchemasOutput:
+        """List project definitions and the read-only built-in definitions."""
+        ...
+
+    @overload
+    async def execute(self, action: projects.SetPropertySchemaAction) -> outputs.Empty:
+        """Create or replace a project schema without validating existing property values.
+
+        Requires permission to manage project settings. Built-in definitions are read-only.
+        The schema must be a JSON object or boolean. Editors report unsupported or invalid
+        schemas and allow explicit overrides; APIs do not enforce schemas on property writes."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: projects.RemovePropertySchemaAction
+    ) -> outputs.Empty:
+        """Remove a project definition without changing property values.
+
+        Requires permission to manage project settings. Built-in definitions are read-only."""
+        ...
+
+    @overload
+    async def execute(
         self, action: projects.GetProjectOtlpConfigAction
     ) -> projects.GetProjectOtlpConfigOutput:
-        """Get the OTLP event forwarding configuration for a project."""
+        """**Unstable (feature `otlp_export`).**
+
+        Get the OTLP event forwarding configuration for a project."""
         ...
 
     @overload
     async def execute(
         self, action: projects.SetProjectOtlpConfigAction
     ) -> outputs.Empty:
-        """Set the OTLP event forwarding configuration for a project."""
+        """**Unstable (feature `otlp_export`).**
+
+        Set the OTLP event forwarding configuration for a project."""
         ...
 
     @overload
@@ -1969,7 +2566,9 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: devices.QueryDeviceCommandsAction
     ) -> devices.QueryDeviceCommandsOutput:
-        """Query the on-demand commands supported by a device."""
+        """**Unstable (feature `device_commands`).**
+
+        Query the on-demand commands supported by a device."""
         ...
 
     @overload
@@ -2005,14 +2604,150 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: fleet.DefineComputedFleetPropertyAction
     ) -> outputs.Empty:
-        """Define a computed fleet property."""
+        """**Unstable (feature `fleet_computed_properties`).**
+
+        Define a computed fleet property."""
         ...
 
     @overload
     async def execute(
         self, action: fleet.QueryComputedFleetPropertyDefinitionsAction
     ) -> fleet.QueryComputedFleetPropertyDefinitionsOutput:
-        """Query computed fleet property definitions for a project."""
+        """**Unstable (feature `fleet_computed_properties`).**
+
+        Query computed fleet property definitions for a project."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: fleet.QueryFleetOperationsAction
+    ) -> fleet.QueryFleetOperationsOutput:
+        """Query fleet operations for a project."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: fleet.GetFleetOperationAction
+    ) -> fleet.GetFleetOperationOutput:
+        """Get fleet operation details."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: fleet.CreateFleetOperationAction
+    ) -> fleet.CreateFleetOperationOutput:
+        """Create a fleet operation."""
+        ...
+
+    @overload
+    async def execute(self, action: fleet.StartFleetOperationAction) -> outputs.Empty:
+        """Start a draft fleet operation."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: fleet.AdvanceFleetOperationStageAction
+    ) -> fleet.AdvanceFleetOperationStageOutput:
+        """Advance the fleet operation to the next stage."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: fleet.QueryFleetOperationTargetsAction
+    ) -> fleet.QueryFleetOperationTargetsOutput:
+        """Query the devices a fleet operation applies to, its *targets*.
+
+        A target is a device the selector matched, reported together with the device operation
+        carrying out the work on it and the stage that gates it. Devices in stages the rollout
+        has not reached yet are included, and are `Pending`.
+
+        This is a separate query rather than part of the operation's details because the list
+        grows with the fleet, and most reads of an operation do not want it."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: fleet.QueryFleetOperationSelectionErrorsAction
+    ) -> fleet.QueryFleetOperationSelectionErrorsOutput:
+        """Query the devices whose selector evaluation failed for a fleet operation.
+
+        Normally empty. A non-empty result means the selector could not be evaluated against
+        those devices, so the operation cannot tell whether it applies to them."""
+        ...
+
+    @overload
+    async def execute(self, action: fleet.PauseFleetOperationAction) -> outputs.Empty:
+        """Pause a running fleet operation.
+
+        Pausing halts the rollout without undoing any of it. No new devices are enrolled, no
+        device operation makes progress, and devices are handed no new work. Nothing is
+        cancelled and no state is lost.
+
+        A device that already took a work item and has carried it out can still report the
+        result, and the result is recorded: pausing stops new work being generated, it does not
+        discard work that was genuinely done.
+
+        Resume with `fleet_StartOperation`, which picks the rollout up exactly where it left
+        off. Time spent paused does not count towards step timeouts: the clock on any step that
+        was in flight restarts on resume, so a long pause cannot time work out."""
+        ...
+
+    @overload
+    async def execute(self, action: fleet.CancelFleetOperationAction) -> outputs.Empty:
+        """Cancel a fleet operation."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.QueryDeviceOperationsAction
+    ) -> devices.QueryDeviceOperationsOutput:
+        """Query device operations for a device."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.GetDeviceOperationAction
+    ) -> devices.GetDeviceOperationOutput:
+        """Get device operation details."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.CreateDeviceOperationAction
+    ) -> devices.CreateDeviceOperationOutput:
+        """Create a device operation."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.StartDeviceOperationAction
+    ) -> outputs.Empty:
+        """Start a pending device operation."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.CancelDeviceOperationAction
+    ) -> outputs.Empty:
+        """Cancel a device operation."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.ClaimDeviceOperationWorkAction
+    ) -> devices.ClaimDeviceOperationWorkOutput:
+        """Atomically claim device operation work for a device."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: devices.ReportDeviceOperationStepAction
+    ) -> outputs.Empty:
+        """Report the result of a device operation step.
+
+        Repeating a report after it was already applied is a successful no-op. A report whose
+        claim has been superseded is also ignored, so an expired worker cannot overwrite the
+        current attempt."""
         ...
 
     @overload
@@ -2060,7 +2795,11 @@ class _AsyncExecuteMixin:
     @overload
     async def execute(
         self, action: repositories.SetRepositorySlugAction
-    ) -> repositories.SetRepositorySlugOutput: ...
+    ) -> repositories.SetRepositorySlugOutput:
+        """Set the slug of a repository.
+
+        Note: Setting the slug requires the `public_repositories` subscription feature."""
+        ...
 
     @overload
     async def execute(
@@ -2074,6 +2813,20 @@ class _AsyncExecuteMixin:
         self, action: repositories.QueryRepositoryAssetsAction
     ) -> repositories.QueryRepositoryAssetsOutput:
         """Query the assets of a repository."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.SetRepositoryAssetCleanupAction
+    ) -> outputs.Empty:
+        """Configure automatic cleanup. Requires permission to manage repository settings."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.GetAssetReferencesAction
+    ) -> repositories.GetAssetReferencesOutput:
+        """List the package attachments retaining a repository asset."""
         ...
 
     @overload
@@ -2126,6 +2879,14 @@ class _AsyncExecuteMixin:
         self, action: repositories.SetPackageMetadataAction
     ) -> outputs.Empty:
         """Set metadata on a package."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.SetPackagePresentationAction
+    ) -> outputs.Empty:
+        """Replace display text and optionally change the image.
+        Omitted display name and description are cleared; an omitted image is preserved."""
         ...
 
     @overload
@@ -2191,6 +2952,32 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(
+        self, action: repositories.SealPackageVersionAction
+    ) -> outputs.Empty:
+        """Permanently seal a version. Requires permission to manage versions.
+        Sealing cancels scheduled deletion and blocks changes to the name, metadata,
+        and attachments, as well as deletion of the version, package, or repository.
+        Tags remain editable. Sealing cannot be reversed."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.SetPackageVersionRetentionAction
+    ) -> outputs.Empty:
+        """Replace the package retention policy. Requires permission to manage versions."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.SetPackageVersionDeletionScheduleAction
+    ) -> outputs.Empty:
+        """Schedule or cancel automatic deletion. Requires permission to manage versions.
+        Deletion removes the version and all tags, including locked tags. It does not
+        check device installations. Unused assets follow the repository cleanup policy."""
+        ...
+
+    @overload
+    async def execute(
         self, action: repositories.SetPackageVersionNameAction
     ) -> outputs.Empty:
         """Set the name of a package version."""
@@ -2247,6 +3034,34 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(
+        self, action: organizations.SetOrganizationS3ConfigAction
+    ) -> outputs.Empty:
+        """Organization S3 defaults for repositories without their own configuration."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: organizations.GetOrganizationS3ConfigAction
+    ) -> organizations.GetOrganizationS3ConfigOutput:
+        """Get organization storage settings. Secret credentials are never returned."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: organizations.DeleteOrganizationS3ConfigAction
+    ) -> outputs.Empty:
+        """Remove organization storage defaults without deleting stored objects."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.DeleteRepositoryS3ConfigAction
+    ) -> outputs.Empty:
+        """Remove a repository override and use organization storage when configured."""
+        ...
+
+    @overload
+    async def execute(
         self, action: repositories.SetRepositoryS3ConfigAction
     ) -> outputs.Empty:
         """Set the S3 configuration for the repository."""
@@ -2275,7 +3090,8 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(self, action: repositories.DeleteAssetAction) -> outputs.Empty:
-        """Delete an asset."""
+        """Schedule deletion of an unused asset. Referenced assets are rejected.
+        The asset remains visible until object-storage deletion completes."""
         ...
 
     @overload
@@ -2294,6 +3110,15 @@ class _AsyncExecuteMixin:
 
     @overload
     async def execute(
+        self, action: repositories.FinalizeAssetUploadAction
+    ) -> outputs.Empty:
+        """Verify an uploaded object and make its asset available.
+
+        This action is idempotent: finalizing an already available asset succeeds."""
+        ...
+
+    @overload
+    async def execute(
         self, action: repositories.QueryAuditLogEventsAction
     ) -> repositories.QueryAuditLogEventsOutput:
         """Query the audit log of the repository."""
@@ -2303,7 +3128,9 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: vulnerabilities.IndexVersionDocumentsAction
     ) -> vulnerabilities.IndexVersionDocumentsOutput:
-        """Trigger indexing of every CycloneDX document referenced by the
+        """**Unstable (feature `vulnerability_management`).**
+
+        Trigger indexing of every CycloneDX or SPDX document referenced by the
         version's artifact assets via `relations.{sbom,vdr,vex}`.
 
         The hub fetches the referenced documents from the repository's S3
@@ -2315,7 +3142,9 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: vulnerabilities.IndexPackageDocumentsAction
     ) -> vulnerabilities.IndexPackageDocumentsOutput:
-        """Trigger indexing of every CycloneDX document referenced by the
+        """**Unstable (feature `vulnerability_management`).**
+
+        Trigger indexing of every CycloneDX or SPDX document referenced by the
         package's metadata via `relations.{vex}` (typically just VEX).
 
         Mirrors `IndexVersionDocumentsAction`. Used after attaching a new
@@ -2326,7 +3155,9 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: vulnerabilities.GetVersionVulnerabilityOverviewAction
     ) -> vulnerabilities.GetVersionVulnerabilityOverviewOutput:
-        """Get the vulnerability overview for a package version: artifact list,
+        """**Unstable (feature `vulnerability_management`).**
+
+        Get the vulnerability overview for a package version: artifact list,
         SBOM/VDR/VEX descriptors per artifact, package-level VEX, and
         (when indexing is enabled) the rolled-up severity summary."""
         ...
@@ -2335,13 +3166,17 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: vulnerabilities.QueryPackageVersionComponentsAction
     ) -> vulnerabilities.QueryPackageVersionComponentsOutput:
-        """Query the components extracted from a package version's SBOMs."""
+        """**Unstable (feature `vulnerability_management`).**
+
+        Query the components extracted from a package version's SBOMs."""
         ...
 
     @overload
     async def execute(
         self, action: vulnerabilities.QueryPackageVersionFindingsAction
-    ) -> vulnerabilities.QueryPackageVersionFindingsOutput: ...
+    ) -> vulnerabilities.QueryPackageVersionFindingsOutput:
+        """**Unstable (feature `vulnerability_management`).**"""
+        ...
 
     @overload
     async def execute(

@@ -102,3 +102,7 @@ async with AsyncClient("https://hub.example.com", token="your-api-token") as cli
     for device in output.devices:
         print(f"{device.device_id}: connected={device.is_connected}")
 ```
+
+Both clients require HTTPS by default. For an explicitly trusted local development
+network only, HTTP can be enabled with `dangerous_allow_plaintext=True`; this option
+must not be used for deployed Hub credentials.
