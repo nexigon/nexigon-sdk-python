@@ -7,11 +7,13 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import json as _schema_json  # noqa: F401
 
 
-class GetInstanceStatisticsAction(pydantic.BaseModel):
+class GetInstanceStatisticsAction(_sidex.Model):
     """Get instance statistics."""
 
     model_config = pydantic.ConfigDict(
@@ -19,19 +21,19 @@ class GetInstanceStatisticsAction(pydantic.BaseModel):
     )
 
 
-class GetInstanceStatisticsOutput(pydantic.BaseModel):
+class GetInstanceStatisticsOutput(_sidex.Model):
     """Instance statistics."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    users: int = pydantic.Field(description="Number of users.")
-    projects: int = pydantic.Field(description="Number of projects.")
-    devices: int = pydantic.Field(description="Number of devices.")
+    users: _sidex.U32 = pydantic.Field(description="Number of users.")
+    projects: _sidex.U32 = pydantic.Field(description="Number of projects.")
+    devices: _sidex.U32 = pydantic.Field(description="Number of devices.")
 
 
-class GetInstanceSettingsRawAction(pydantic.BaseModel):
+class GetInstanceSettingsRawAction(_sidex.Model):
     """Get the settings of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -39,7 +41,7 @@ class GetInstanceSettingsRawAction(pydantic.BaseModel):
     )
 
 
-class GetInstanceSettingsRawOutput(pydantic.BaseModel):
+class GetInstanceSettingsRawOutput(_sidex.Model):
     """Settings of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -51,7 +53,7 @@ class GetInstanceSettingsRawOutput(pydantic.BaseModel):
     )
 
 
-class SetInstanceSettingRawAction(pydantic.BaseModel):
+class SetInstanceSettingRawAction(_sidex.Model):
     """Set a setting of the instance."""
 
     model_config = pydantic.ConfigDict(

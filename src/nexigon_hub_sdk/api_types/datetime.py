@@ -7,28 +7,18 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
-
-class Timestamp(str):
-    """ISO 8601 formatted date and time string."""
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
-    ) -> pydantic_core.CoreSchema:
-        return handler(str)
+from . import _sidex  # noqa: F401
 
 
-class Date(str):
-    """Date string without time zone."""
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
-    ) -> pydantic_core.CoreSchema:
-        return handler(str)
+# ISO 8601 formatted date and time string.
+type Timestamp = _sidex.Timestamp
 
 
-class DateSpan(pydantic.BaseModel):
+# Date string without time zone.
+type Date = _sidex.Date
+
+
+class DateSpan(_sidex.Model):
     """Date span with start and end dates.
 
     **The end date itself is not included in the span.**"""

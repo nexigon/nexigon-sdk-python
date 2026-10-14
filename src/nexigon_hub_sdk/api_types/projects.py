@@ -7,11 +7,16 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import audit as _schema_audit  # noqa: F401
     from . import datetime as _schema_datetime  # noqa: F401
     from . import devices as _schema_devices  # noqa: F401
+    from . import fleet as _schema_fleet  # noqa: F401
+    from . import json as _schema_json  # noqa: F401
     from . import organizations as _schema_organizations  # noqa: F401
+    from . import pagination as _schema_pagination  # noqa: F401
     from . import repositories as _schema_repositories  # noqa: F401
 
 
@@ -35,6 +40,16 @@ class DeploymentTokenId(str):
         return handler(str)
 
 
+class DevicePairingKeyId(str):
+    """Unique ID of a device pairing key."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
+    ) -> pydantic_core.CoreSchema:
+        return handler(str)
+
+
 class DeploymentToken(str):
     """Deployment token."""
 
@@ -45,7 +60,7 @@ class DeploymentToken(str):
         return handler(str)
 
 
-class QueryProjectsAction(pydantic.BaseModel):
+class QueryProjectsAction(_sidex.Model):
     """Query the projects of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -53,7 +68,7 @@ class QueryProjectsAction(pydantic.BaseModel):
     )
 
 
-class QueryProjectsOutput(pydantic.BaseModel):
+class QueryProjectsOutput(_sidex.Model):
     """Output of querying the projects of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -63,7 +78,7 @@ class QueryProjectsOutput(pydantic.BaseModel):
     projects: list[QueryProjectsItem] = pydantic.Field(description="List of projects.")
 
 
-class QueryProjectsItem(pydantic.BaseModel):
+class QueryProjectsItem(_sidex.Model):
     """Project item."""
 
     model_config = pydantic.ConfigDict(
@@ -78,7 +93,7 @@ class QueryProjectsItem(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the project.")
 
 
-class GetProjectDetailsAction(pydantic.BaseModel):
+class GetProjectDetailsAction(_sidex.Model):
     """Get information about a project."""
 
     model_config = pydantic.ConfigDict(
@@ -92,7 +107,7 @@ class GetProjectDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetProjectDetailsOutput(pydantic.BaseModel):
+class GetProjectDetailsOutput(_sidex.Model):
     """Information about a project."""
 
     model_config = pydantic.ConfigDict(
@@ -105,14 +120,14 @@ class GetProjectDetailsOutput(pydantic.BaseModel):
         serialization_alias="projectId",
     )
     name: str = pydantic.Field(description="Name of the project.")
-    device_count: int = pydantic.Field(
+    device_count: _sidex.U32 = pydantic.Field(
         description="Number of devices in the project.",
         validation_alias="deviceCount",
         serialization_alias="deviceCount",
     )
 
 
-class SetProjectNameAction(pydantic.BaseModel):
+class SetProjectNameAction(_sidex.Model):
     """Set the name of a project."""
 
     model_config = pydantic.ConfigDict(
@@ -127,7 +142,7 @@ class SetProjectNameAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="New name of the project.")
 
 
-class CreateProjectAction(pydantic.BaseModel):
+class CreateProjectAction(_sidex.Model):
     """Create a new project."""
 
     model_config = pydantic.ConfigDict(
@@ -142,7 +157,7 @@ class CreateProjectAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the project.")
 
 
-class CreateProjectSuccess(pydantic.BaseModel):
+class CreateProjectSuccess(_sidex.Model):
     """Project creation has been successful."""
 
     model_config = pydantic.ConfigDict(
@@ -156,7 +171,7 @@ class CreateProjectSuccess(pydantic.BaseModel):
     )
 
 
-class DeleteProjectAction(pydantic.BaseModel):
+class DeleteProjectAction(_sidex.Model):
     """Delete a project."""
 
     model_config = pydantic.ConfigDict(
@@ -170,8 +185,26 @@ class DeleteProjectAction(pydantic.BaseModel):
     )
 
 
-class QueryProjectDevicesAction(pydantic.BaseModel):
-    """Query the devices of a project."""
+class PropertySchema(_sidex.Model):
+    """A schema for an exact property name. Schemas never constrain property writes."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    name: str = pydantic.Field(description="Exact property name.")
+    json_schema: _schema_json.JsonValue = pydantic.Field(
+        description="JSON Schema document.",
+        validation_alias="schema",
+        serialization_alias="schema",
+    )
+    builtin: _sidex.Bool = pydantic.Field(
+        description="Whether the definition is built in and cannot be changed or removed."
+    )
+
+
+class QueryPropertySchemasAction(_sidex.Model):
+    """List project definitions and the read-only built-in definitions."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -184,25 +217,101 @@ class QueryProjectDevicesAction(pydantic.BaseModel):
     )
 
 
-class QueryProjectDevicesOutput(pydantic.BaseModel):
+class QueryPropertySchemasOutput(_sidex.Model):
+    """Available property schemas, ordered by name."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    schemas: list[PropertySchema] = pydantic.Field(description="Available definitions.")
+
+
+class SetPropertySchemaAction(_sidex.Model):
+    """Create or replace a project schema without validating existing property values.
+
+    Requires permission to manage project settings. Built-in definitions are read-only.
+    The schema must be a JSON object or boolean. Editors report unsupported or invalid
+    schemas and allow explicit overrides; APIs do not enforce schemas on property writes."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    name: str = pydantic.Field(description="Exact property name.")
+    json_schema: _schema_json.JsonValue = pydantic.Field(
+        description="JSON Schema document.",
+        validation_alias="schema",
+        serialization_alias="schema",
+    )
+
+
+class RemovePropertySchemaAction(_sidex.Model):
+    """Remove a project definition without changing property values.
+
+    Requires permission to manage project settings. Built-in definitions are read-only."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    name: str = pydantic.Field(description="Exact property name.")
+
+
+class QueryProjectDevicesAction(_sidex.Model):
+    """Query the devices of a project."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    selector: _schema_fleet.FleetOperationTargetSelector | None = pydantic.Field(
+        default=None, description="Shared filter, also accepted by fleet operations."
+    )
+    project_id: ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+
+
+class QueryProjectDevicesOutput(_sidex.Model):
     """Output of querying the devices of a project."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    selection_errors: list[_schema_devices.DeviceSelectionError] = pydantic.Field(
+        description="Devices whose property predicates failed evaluation.",
+        validation_alias="selectionErrors",
+        serialization_alias="selectionErrors",
+    )
     devices: list[QueryProjectDevicesItem] = pydantic.Field(
         description="List of devices."
     )
 
 
-class QueryProjectDevicesItem(pydantic.BaseModel):
+class QueryProjectDevicesItem(_sidex.Model):
     """Device item."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    groups: list[_schema_devices.DeviceGroup] = pydantic.Field(
+        description="Groups currently assigned to this device."
+    )
     device_id: _schema_devices.DeviceId = pydantic.Field(
         description="ID of the device.",
         validation_alias="deviceId",
@@ -221,12 +330,12 @@ class QueryProjectDevicesItem(pydantic.BaseModel):
     status: _schema_devices.DeviceStatus = pydantic.Field(
         description="Combined device status (connection + health)."
     )
-    is_connected: bool = pydantic.Field(
+    is_connected: _sidex.Bool = pydantic.Field(
         description="Indicates whether the device is online.",
         validation_alias="isConnected",
         serialization_alias="isConnected",
     )
-    pending_certificates_count: int = pydantic.Field(
+    pending_certificates_count: _sidex.U32 = pydantic.Field(
         description="Pending device certificates.",
         validation_alias="pendingCertificatesCount",
         serialization_alias="pendingCertificatesCount",
@@ -237,7 +346,7 @@ class QueryProjectDevicesItem(pydantic.BaseModel):
         validation_alias="lastConnectedAt",
         serialization_alias="lastConnectedAt",
     )
-    current_connection_duration_secs: int | None = pydantic.Field(
+    current_connection_duration_secs: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Duration of the current connection in seconds (null if not connected).",
         validation_alias="currentConnectionDurationSecs",
@@ -245,7 +354,7 @@ class QueryProjectDevicesItem(pydantic.BaseModel):
     )
 
 
-class QueryProjectDeploymentTokensAction(pydantic.BaseModel):
+class QueryProjectDeploymentTokensAction(_sidex.Model):
     """Query the deployment tokens of a project."""
 
     model_config = pydantic.ConfigDict(
@@ -259,7 +368,7 @@ class QueryProjectDeploymentTokensAction(pydantic.BaseModel):
     )
 
 
-class QueryProjectDeploymentTokensOutput(pydantic.BaseModel):
+class QueryProjectDeploymentTokensOutput(_sidex.Model):
     """Output of querying the deployment tokens of a project."""
 
     model_config = pydantic.ConfigDict(
@@ -271,7 +380,7 @@ class QueryProjectDeploymentTokensOutput(pydantic.BaseModel):
     )
 
 
-class QueryProjectDeploymentTokensItem(pydantic.BaseModel):
+class QueryProjectDeploymentTokensItem(_sidex.Model):
     """Deployment token item."""
 
     model_config = pydantic.ConfigDict(
@@ -283,6 +392,12 @@ class QueryProjectDeploymentTokensItem(pydantic.BaseModel):
         validation_alias="tokenId",
         serialization_alias="tokenId",
     )
+    device_id: _schema_devices.DeviceId | None = pydantic.Field(
+        default=None,
+        description="Device this deployment token is bound to, if any.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
     created_at: _schema_datetime.Timestamp = pydantic.Field(
         description="Creation date of the token.",
         validation_alias="createdAt",
@@ -292,7 +407,7 @@ class QueryProjectDeploymentTokensItem(pydantic.BaseModel):
     flags: DeploymentTokenFlags = pydantic.Field(description="Flags.")
 
 
-class QueryProjectRepositoriesAction(pydantic.BaseModel):
+class QueryProjectRepositoriesAction(_sidex.Model):
     """Query repositories of a project."""
 
     model_config = pydantic.ConfigDict(
@@ -306,7 +421,7 @@ class QueryProjectRepositoriesAction(pydantic.BaseModel):
     )
 
 
-class QueryProjectRepositoriesOutput(pydantic.BaseModel):
+class QueryProjectRepositoriesOutput(_sidex.Model):
     """Output of querying the repositories of a project."""
 
     model_config = pydantic.ConfigDict(
@@ -318,7 +433,7 @@ class QueryProjectRepositoriesOutput(pydantic.BaseModel):
     )
 
 
-class QueryProjectRepositoriesItem(pydantic.BaseModel):
+class QueryProjectRepositoriesItem(_sidex.Model):
     """Repository item."""
 
     model_config = pydantic.ConfigDict(
@@ -346,14 +461,14 @@ class QueryProjectRepositoriesItem(pydantic.BaseModel):
     )
 
 
-class DeploymentTokenFlags(pydantic.BaseModel):
+class DeploymentTokenFlags(_sidex.Model):
     """Flags for deployment tokens."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    auto_accept: bool | None = pydantic.Field(
+    auto_accept: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Whether to automatically accept new devices.",
         validation_alias="autoAccept",
@@ -361,7 +476,7 @@ class DeploymentTokenFlags(pydantic.BaseModel):
     )
 
 
-class CreateDeploymentTokenAction(pydantic.BaseModel):
+class CreateDeploymentTokenAction(_sidex.Model):
     """Create a deployment token."""
 
     model_config = pydantic.ConfigDict(
@@ -379,7 +494,7 @@ class CreateDeploymentTokenAction(pydantic.BaseModel):
     )
 
 
-class CreateDeploymentTokenOutput(pydantic.BaseModel):
+class CreateDeploymentTokenOutput(_sidex.Model):
     """Output of creating a deployment token."""
 
     model_config = pydantic.ConfigDict(
@@ -394,7 +509,7 @@ class CreateDeploymentTokenOutput(pydantic.BaseModel):
     token: DeploymentToken = pydantic.Field(description="Token.")
 
 
-class DeleteDeploymentTokenAction(pydantic.BaseModel):
+class DeleteDeploymentTokenAction(_sidex.Model):
     """Delete a deployment token."""
 
     model_config = pydantic.ConfigDict(
@@ -408,7 +523,7 @@ class DeleteDeploymentTokenAction(pydantic.BaseModel):
     )
 
 
-class SetDeploymentTokenFlagsAction(pydantic.BaseModel):
+class SetDeploymentTokenFlagsAction(_sidex.Model):
     """Set the flags of a deployment token."""
 
     model_config = pydantic.ConfigDict(
@@ -423,8 +538,8 @@ class SetDeploymentTokenFlagsAction(pydantic.BaseModel):
     flags: DeploymentTokenFlags = pydantic.Field(description="Flags.")
 
 
-class QueryAuditLogEventsAction(pydantic.BaseModel):
-    """Query the audit log of the project."""
+class QueryDevicePairingKeysAction(_sidex.Model):
+    """Query the device pairing keys of a project."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -437,19 +552,227 @@ class QueryAuditLogEventsAction(pydantic.BaseModel):
     )
 
 
-class QueryAuditLogEventsOutput(pydantic.BaseModel):
+class QueryDevicePairingKeysOutput(_sidex.Model):
+    """Output of querying the device pairing keys of a project."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    pairing_keys: list[QueryDevicePairingKeysItem] = pydantic.Field(
+        description="List of device pairing keys.",
+        validation_alias="pairingKeys",
+        serialization_alias="pairingKeys",
+    )
+
+
+class QueryDevicePairingKeysItem(_sidex.Model):
+    """Device pairing key item."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    pairing_key_id: DevicePairingKeyId = pydantic.Field(
+        description="ID of the pairing key.",
+        validation_alias="pairingKeyId",
+        serialization_alias="pairingKeyId",
+    )
+    selector: str = pydantic.Field(
+        description="Public lookup selector (first six normalized characters of the key)."
+    )
+    created_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Creation date of the pairing key.",
+        validation_alias="createdAt",
+        serialization_alias="createdAt",
+    )
+    expires_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Expiration date of the pairing key.",
+        validation_alias="expiresAt",
+        serialization_alias="expiresAt",
+    )
+    used_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Timestamp when the pairing key was redeemed.",
+        validation_alias="usedAt",
+        serialization_alias="usedAt",
+    )
+    revoked_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Timestamp when the pairing key was revoked.",
+        validation_alias="revokedAt",
+        serialization_alias="revokedAt",
+    )
+    name: str | None = pydantic.Field(
+        default=None, description="Name of the pairing key."
+    )
+    device_id: _schema_devices.DeviceId | None = pydantic.Field(
+        default=None,
+        description="Device created or associated when the pairing key was redeemed.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    token_id: DeploymentTokenId | None = pydantic.Field(
+        default=None,
+        description="Deployment token issued when the pairing key was redeemed.",
+        validation_alias="tokenId",
+        serialization_alias="tokenId",
+    )
+
+
+class CreateDevicePairingKeyAction(_sidex.Model):
+    """Create a device pairing key."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    name: str | None = pydantic.Field(
+        default=None, description="Name of the pairing key."
+    )
+    valid_for_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Pairing key validity duration in seconds.\n\nDefaults to 5 minutes. The maximum is 10 minutes.",
+        validation_alias="validForSecs",
+        serialization_alias="validForSecs",
+    )
+
+
+class CreateDevicePairingKeyOutput(_sidex.Model):
+    """Output of creating a device pairing key."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    pairing_key_id: DevicePairingKeyId = pydantic.Field(
+        description="ID of the pairing key.",
+        validation_alias="pairingKeyId",
+        serialization_alias="pairingKeyId",
+    )
+    pairing_key: str = pydantic.Field(
+        description="Pairing key. This is only returned once.",
+        validation_alias="pairingKey",
+        serialization_alias="pairingKey",
+    )
+    selector: str = pydantic.Field(
+        description="Public lookup selector (first six normalized characters of the key)."
+    )
+    created_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Creation date of the pairing key.",
+        validation_alias="createdAt",
+        serialization_alias="createdAt",
+    )
+    expires_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Expiration date of the pairing key.",
+        validation_alias="expiresAt",
+        serialization_alias="expiresAt",
+    )
+
+
+class RevokeDevicePairingKeyAction(_sidex.Model):
+    """Revoke an unused device pairing key."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    pairing_key_id: DevicePairingKeyId = pydantic.Field(
+        description="ID of the pairing key.",
+        validation_alias="pairingKeyId",
+        serialization_alias="pairingKeyId",
+    )
+
+
+class RedeemDevicePairingKeyAction(_sidex.Model):
+    """Redeem a device pairing key."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    pairing_key: str = pydantic.Field(
+        description="Pairing key as shown to the user.",
+        validation_alias="pairingKey",
+        serialization_alias="pairingKey",
+    )
+    fingerprint: _schema_devices.DeviceFingerprint = pydantic.Field(
+        description="Fingerprint generated by the device."
+    )
+    device_name: str | None = pydantic.Field(
+        default=None,
+        description="Optional display name for the device.",
+        validation_alias="deviceName",
+        serialization_alias="deviceName",
+    )
+
+
+class RedeemDevicePairingKeyOutput(_sidex.Model):
+    """Output of redeeming a device pairing key."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: ProjectId = pydantic.Field(
+        description="Project the device was created in.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    device_id: _schema_devices.DeviceId = pydantic.Field(
+        description="Device created for this pairing key.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    token_id: DeploymentTokenId = pydantic.Field(
+        description="ID of the issued device-bound deployment token.",
+        validation_alias="tokenId",
+        serialization_alias="tokenId",
+    )
+    token: DeploymentToken = pydantic.Field(
+        description="Device-bound deployment token. This is only returned once."
+    )
+
+
+class QueryAuditLogEventsAction(_sidex.Model):
+    """Query the audit log of the project."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
+    project_id: ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+
+
+class QueryAuditLogEventsOutput(_sidex.Model):
     """Output of querying the audit log of the project."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     events: list[_schema_audit.AuditLogEvent] = pydantic.Field(
         description="List of audit log events."
     )
 
 
-class AddProjectRepositoryAction(pydantic.BaseModel):
+class AddProjectRepositoryAction(_sidex.Model):
     """Add a repository to the project."""
 
     model_config = pydantic.ConfigDict(
@@ -468,7 +791,7 @@ class AddProjectRepositoryAction(pydantic.BaseModel):
     )
 
 
-class RemoveProjectRepositoryAction(pydantic.BaseModel):
+class RemoveProjectRepositoryAction(_sidex.Model):
     """Remove a repository from the project."""
 
     model_config = pydantic.ConfigDict(
@@ -487,7 +810,7 @@ class RemoveProjectRepositoryAction(pydantic.BaseModel):
     )
 
 
-class ProjectOtlpConfig(pydantic.BaseModel):
+class ProjectOtlpConfig(_sidex.Model):
     """**Unstable (feature `otlp_export`).**
 
     OTLP event forwarding configuration for a project."""
@@ -496,7 +819,9 @@ class ProjectOtlpConfig(pydantic.BaseModel):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    enabled: bool = pydantic.Field(description="Whether OTLP forwarding is enabled.")
+    enabled: _sidex.Bool = pydantic.Field(
+        description="Whether OTLP forwarding is enabled."
+    )
     endpoint: str | None = pydantic.Field(
         default=None,
         description="OTLP endpoint URL (e.g., https://otel-collector.example.com/v1/logs).",
@@ -506,7 +831,7 @@ class ProjectOtlpConfig(pydantic.BaseModel):
     )
 
 
-class GetProjectOtlpConfigAction(pydantic.BaseModel):
+class GetProjectOtlpConfigAction(_sidex.Model):
     """**Unstable (feature `otlp_export`).**
 
     Get the OTLP event forwarding configuration for a project."""
@@ -522,7 +847,7 @@ class GetProjectOtlpConfigAction(pydantic.BaseModel):
     )
 
 
-class GetProjectOtlpConfigOutput(pydantic.BaseModel):
+class GetProjectOtlpConfigOutput(_sidex.Model):
     """**Unstable (feature `otlp_export`).**
 
     Output of getting the OTLP configuration for a project."""
@@ -534,7 +859,7 @@ class GetProjectOtlpConfigOutput(pydantic.BaseModel):
     config: ProjectOtlpConfig = pydantic.Field(description="OTLP configuration.")
 
 
-class SetProjectOtlpConfigAction(pydantic.BaseModel):
+class SetProjectOtlpConfigAction(_sidex.Model):
     """**Unstable (feature `otlp_export`).**
 
     Set the OTLP event forwarding configuration for a project."""
@@ -551,7 +876,7 @@ class SetProjectOtlpConfigAction(pydantic.BaseModel):
     config: ProjectOtlpConfig = pydantic.Field(description="OTLP configuration.")
 
 
-class CreateProjectOutput_Created(pydantic.BaseModel):
+class CreateProjectOutput_Created(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )

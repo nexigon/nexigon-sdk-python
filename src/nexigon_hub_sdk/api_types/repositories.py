@@ -7,12 +7,15 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import audit as _schema_audit  # noqa: F401
     from . import datetime as _schema_datetime  # noqa: F401
     from . import digest as _schema_digest  # noqa: F401
     from . import json as _schema_json  # noqa: F401
     from . import organizations as _schema_organizations  # noqa: F401
+    from . import pagination as _schema_pagination  # noqa: F401
     from . import projects as _schema_projects  # noqa: F401
 
 
@@ -56,8 +59,22 @@ class PackageVersionId(str):
         return handler(str)
 
 
-class RepositoryS3Config(pydantic.BaseModel):
-    """Repository S3 config."""
+class RepositoryAssetStorage(_sidex.Model):
+    """Latest object-storage check for an asset."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    status: RepositoryAssetStorageStatus
+    checked_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None, validation_alias="checkedAt", serialization_alias="checkedAt"
+    )
+    detail: str | None = pydantic.Field(default=None)
+
+
+class RepositoryS3Config(_sidex.Model):
+    """S3 connection settings for a repository or organization."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -73,7 +90,13 @@ class RepositoryS3Config(pydantic.BaseModel):
     )
     prefix: str | None = pydantic.Field(
         default=None,
-        description="Optional prefix inside the bucket to scope this repository.",
+        description="Optional bucket prefix. Organization storage adds `repositories/<repository-id>/`.",
+    )
+    force_path_style: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Force path-style bucket addressing.\nBy default, Nexigon uses virtual-hosted addressing.",
+        validation_alias="forcePathStyle",
+        serialization_alias="forcePathStyle",
     )
     access_key_id: str = pydantic.Field(
         description="S3 access key ID (not sensitive, can be plain text).",
@@ -88,7 +111,7 @@ class RepositoryS3Config(pydantic.BaseModel):
     )
 
 
-class ResolveRepositoryNameAction(pydantic.BaseModel):
+class ResolveRepositoryNameAction(_sidex.Model):
     """Resolve a repository by its name."""
 
     model_config = pydantic.ConfigDict(
@@ -98,7 +121,7 @@ class ResolveRepositoryNameAction(pydantic.BaseModel):
     repository: str = pydantic.Field(description="Name of the repository.")
 
 
-class GetRepositoryDetailsAction(pydantic.BaseModel):
+class GetRepositoryDetailsAction(_sidex.Model):
     """Get information about a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -112,7 +135,7 @@ class GetRepositoryDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetRepositoryDetailsOutput(pydantic.BaseModel):
+class GetRepositoryDetailsOutput(_sidex.Model):
     """Output of getting information about a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -141,19 +164,19 @@ class GetRepositoryDetailsOutput(pydantic.BaseModel):
     visibility: RepositoryVisibility = pydantic.Field(
         description="Visibility of the repository."
     )
-    package_count: int = pydantic.Field(
+    package_count: _sidex.U64 = pydantic.Field(
         description="Number of packages in the repository.",
         validation_alias="packageCount",
         serialization_alias="packageCount",
     )
-    asset_count: int = pydantic.Field(
+    asset_count: _sidex.U64 = pydantic.Field(
         description="Number of assets in the repository.",
         validation_alias="assetCount",
         serialization_alias="assetCount",
     )
 
 
-class CreateRepositoryAction(pydantic.BaseModel):
+class CreateRepositoryAction(_sidex.Model):
     """Create a new repository."""
 
     model_config = pydantic.ConfigDict(
@@ -175,7 +198,7 @@ class CreateRepositoryAction(pydantic.BaseModel):
     )
 
 
-class CreateRepositorySuccess(pydantic.BaseModel):
+class CreateRepositorySuccess(_sidex.Model):
     """Successfully created a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -189,7 +212,7 @@ class CreateRepositorySuccess(pydantic.BaseModel):
     )
 
 
-class DeleteRepositoryAction(pydantic.BaseModel):
+class DeleteRepositoryAction(_sidex.Model):
     """Delete a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -203,7 +226,7 @@ class DeleteRepositoryAction(pydantic.BaseModel):
     )
 
 
-class SetRepositoryVisibilityAction(pydantic.BaseModel):
+class SetRepositoryVisibilityAction(_sidex.Model):
     """Set the visibility of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -220,7 +243,7 @@ class SetRepositoryVisibilityAction(pydantic.BaseModel):
     )
 
 
-class SetRepositoryDisplayNameAction(pydantic.BaseModel):
+class SetRepositoryDisplayNameAction(_sidex.Model):
     """Set the display name of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -239,7 +262,7 @@ class SetRepositoryDisplayNameAction(pydantic.BaseModel):
     )
 
 
-class SetRepositorySlugAction(pydantic.BaseModel):
+class SetRepositorySlugAction(_sidex.Model):
     """Set the slug of a repository.
 
     Note: Setting the slug requires the `public_repositories` subscription feature."""
@@ -256,7 +279,7 @@ class SetRepositorySlugAction(pydantic.BaseModel):
     slug: str = pydantic.Field(description="New slug of the repository.")
 
 
-class QueryRepositoryPackagesAction(pydantic.BaseModel):
+class QueryRepositoryPackagesAction(_sidex.Model):
     """Query the packages of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -270,7 +293,7 @@ class QueryRepositoryPackagesAction(pydantic.BaseModel):
     )
 
 
-class QueryRepositoryPackagesOutput(pydantic.BaseModel):
+class QueryRepositoryPackagesOutput(_sidex.Model):
     """Output of querying the packages of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -282,13 +305,19 @@ class QueryRepositoryPackagesOutput(pydantic.BaseModel):
     )
 
 
-class QueryRepositoryPackagesItem(pydantic.BaseModel):
+class QueryRepositoryPackagesItem(_sidex.Model):
     """Package query item."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    display_name: str | None = pydantic.Field(
+        default=None,
+        description="Human-readable name, falling back to `name` when absent.",
+        validation_alias="displayName",
+        serialization_alias="displayName",
+    )
     package_id: PackageId = pydantic.Field(
         description="ID of the package.",
         validation_alias="packageId",
@@ -305,7 +334,7 @@ class QueryRepositoryPackagesItem(pydantic.BaseModel):
     )
 
 
-class QueryRepositoryAssetsAction(pydantic.BaseModel):
+class QueryRepositoryAssetsAction(_sidex.Model):
     """Query the assets of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -317,9 +346,21 @@ class QueryRepositoryAssetsAction(pydantic.BaseModel):
         validation_alias="repositoryId",
         serialization_alias="repositoryId",
     )
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Bounded cursor page. Omission preserves the legacy unbounded response.",
+    )
+    filter: RepositoryAssetFilter | None = pydantic.Field(
+        default=None,
+        description="Defaults to all assets. Totals always cover the whole repository.",
+    )
+    sort: RepositoryAssetSort | None = pydantic.Field(
+        default=None,
+        description="Defaults to largest first for pages, creation order for legacy requests.",
+    )
 
 
-class QueryRepositoryAssetsOutput(pydantic.BaseModel):
+class QueryRepositoryAssetsOutput(_sidex.Model):
     """Output of querying the assets of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -329,25 +370,216 @@ class QueryRepositoryAssetsOutput(pydantic.BaseModel):
     assets: list[QueryRepositoryAssetsItem] = pydantic.Field(
         description="List of assets."
     )
+    usage: RepositoryAssetUsage | None = pydantic.Field(
+        default=None,
+        description="Repository-wide storage totals. Absent on older Hubs.",
+    )
+    cleanup: RepositoryAssetCleanupSettings | None = pydantic.Field(
+        default=None, description="Automatic cleanup policy. Absent on older Hubs."
+    )
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None,
+        description="Continuation for a requested page. Absent for legacy requests.",
+    )
 
 
-class QueryRepositoryAssetsItem(pydantic.BaseModel):
-    """Asset query item."""
+class RepositoryAssetCleanupSettings(_sidex.Model):
+    """Automatic cleanup policy for unused repository assets."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    enabled: _sidex.Bool
+    grace_days: _sidex.U16 = pydantic.Field(
+        description="Whole days without package references before automatic deletion.",
+        validation_alias="graceDays",
+        serialization_alias="graceDays",
+    )
+    enabled_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Most recent enablement. Existing unused assets receive a full grace period.",
+        validation_alias="enabledAt",
+        serialization_alias="enabledAt",
+    )
+
+
+class RepositoryAssetUsage(_sidex.Model):
+    """Storage totals count each asset once, regardless of its reference count."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    asset_count: _sidex.U64 = pydantic.Field(
+        validation_alias="assetCount", serialization_alias="assetCount"
+    )
+    stored_bytes: _sidex.U64 = pydantic.Field(
+        description="Bytes of objects last observed present or verified, including pending deletions.",
+        validation_alias="storedBytes",
+        serialization_alias="storedBytes",
+    )
+    referenced_bytes: _sidex.U64 = pydantic.Field(
+        description="Stored bytes with at least one package or version attachment.",
+        validation_alias="referencedBytes",
+        serialization_alias="referencedBytes",
+    )
+    unused_bytes: _sidex.U64 = pydantic.Field(
+        description="Stored bytes without package or version attachments.",
+        validation_alias="unusedBytes",
+        serialization_alias="unusedBytes",
+    )
+    unconfirmed_bytes: _sidex.U64 = pydantic.Field(
+        description="Declared bytes whose presence is unknown, missing, or inconsistent.",
+        validation_alias="unconfirmedBytes",
+        serialization_alias="unconfirmedBytes",
+    )
+    unconfirmed_count: _sidex.U64 = pydantic.Field(
+        description="Number of assets with unknown, missing, inconsistent, or failed storage checks.",
+        validation_alias="unconfirmedCount",
+        serialization_alias="unconfirmedCount",
+    )
+    cleanup_error_count: _sidex.U64 = pydantic.Field(
+        description="Number of assets with a failed deletion attempt.",
+        validation_alias="cleanupErrorCount",
+        serialization_alias="cleanupErrorCount",
+    )
+    checked_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Oldest storage observation among stored assets.",
+        validation_alias="checkedAt",
+        serialization_alias="checkedAt",
+    )
+
+
+class RepositoryAssetLifecycle(_sidex.Model):
+    """Retention information, independent of object-storage verification."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    reference_count: _sidex.U64 = pydantic.Field(
+        validation_alias="referenceCount", serialization_alias="referenceCount"
+    )
+    unreferenced_since: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        validation_alias="unreferencedSince",
+        serialization_alias="unreferencedSince",
+    )
+    eligible_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Earliest automatic deletion time; absent while cleanup is disabled or referenced.",
+        validation_alias="eligibleAt",
+        serialization_alias="eligibleAt",
+    )
+    deletion_started_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        validation_alias="deletionStartedAt",
+        serialization_alias="deletionStartedAt",
+    )
+    deletion_error: str | None = pydantic.Field(
+        default=None,
+        description="Sanitized reason for the latest cleanup failure.",
+        validation_alias="deletionError",
+        serialization_alias="deletionError",
+    )
+
+
+class SetRepositoryAssetCleanupAction(_sidex.Model):
+    """Configure automatic cleanup. Requires permission to manage repository settings."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    repository_id: RepositoryId = pydantic.Field(
+        validation_alias="repositoryId", serialization_alias="repositoryId"
+    )
+    enabled: _sidex.Bool
+    grace_days: _sidex.U16 = pydantic.Field(
+        validation_alias="graceDays", serialization_alias="graceDays"
+    )
+
+
+class GetAssetReferencesAction(_sidex.Model):
+    """List the package attachments retaining a repository asset."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
     asset_id: RepositoryAssetId = pydantic.Field(
+        validation_alias="assetId", serialization_alias="assetId"
+    )
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Bounded cursor page. Omission preserves the legacy unbounded response.",
+    )
+
+
+class GetAssetReferencesOutput(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    references: list[RepositoryAssetReference]
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None,
+        description="Package attachments precede version attachments, each in stable ID order.",
+    )
+
+
+class RepositoryAssetReference(_sidex.Model):
+    """One retaining package or version attachment."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    package_id: PackageId = pydantic.Field(
+        validation_alias="packageId", serialization_alias="packageId"
+    )
+    package_name: str = pydantic.Field(
+        validation_alias="packageName", serialization_alias="packageName"
+    )
+    version_id: PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Absent for a package-level attachment.",
+        validation_alias="versionId",
+        serialization_alias="versionId",
+    )
+    version_name: str | None = pydantic.Field(
+        default=None, validation_alias="versionName", serialization_alias="versionName"
+    )
+    filename: str
+
+
+class QueryRepositoryAssetsItem(_sidex.Model):
+    """Asset query item."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    lifecycle: RepositoryAssetLifecycle | None = pydantic.Field(
+        default=None,
+        description="Reference count and cleanup status. Absent on older Hubs.",
+    )
+    asset_id: RepositoryAssetId = pydantic.Field(
         description="ID of the asset.",
         validation_alias="assetId",
         serialization_alias="assetId",
     )
-    size: int = pydantic.Field(description="Size of the asset.")
+    size: _sidex.U64 = pydantic.Field(description="Size of the asset.")
     digest: _schema_digest.Digest = pydantic.Field(description="Digest of the asset.")
+    storage: RepositoryAssetStorage | None = pydantic.Field(
+        default=None,
+        description="Latest storage check. Absent when connected to an older Hub.",
+    )
 
 
-class QueryRepositoryProjectsAction(pydantic.BaseModel):
+class QueryRepositoryProjectsAction(_sidex.Model):
     """Query repository projects."""
 
     model_config = pydantic.ConfigDict(
@@ -361,7 +593,7 @@ class QueryRepositoryProjectsAction(pydantic.BaseModel):
     )
 
 
-class QueryRepositoryProjectsOutput(pydantic.BaseModel):
+class QueryRepositoryProjectsOutput(_sidex.Model):
     """Output of querying the projects of a repository."""
 
     model_config = pydantic.ConfigDict(
@@ -373,7 +605,7 @@ class QueryRepositoryProjectsOutput(pydantic.BaseModel):
     )
 
 
-class QueryRepositoryProjectsItem(pydantic.BaseModel):
+class QueryRepositoryProjectsItem(_sidex.Model):
     """Project item."""
 
     model_config = pydantic.ConfigDict(
@@ -388,7 +620,7 @@ class QueryRepositoryProjectsItem(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the project.")
 
 
-class ResolvePackageByPathAction(pydantic.BaseModel):
+class ResolvePackageByPathAction(_sidex.Model):
     """Resolve a package by its path."""
 
     model_config = pydantic.ConfigDict(
@@ -399,7 +631,7 @@ class ResolvePackageByPathAction(pydantic.BaseModel):
     package: str = pydantic.Field(description="Name or ID of the package.")
 
 
-class ResolvePackageByPathSuccess(pydantic.BaseModel):
+class ResolvePackageByPathSuccess(_sidex.Model):
     """Successfully resolved package by path."""
 
     model_config = pydantic.ConfigDict(
@@ -418,7 +650,7 @@ class ResolvePackageByPathSuccess(pydantic.BaseModel):
     )
 
 
-class GetPackageDetailsAction(pydantic.BaseModel):
+class GetPackageDetailsAction(_sidex.Model):
     """Get information about a package."""
 
     model_config = pydantic.ConfigDict(
@@ -432,13 +664,23 @@ class GetPackageDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetPackageDetailsOutput(pydantic.BaseModel):
+class GetPackageDetailsOutput(_sidex.Model):
     """Output of getting information about a package."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    presentation: PackagePresentation | None = pydantic.Field(
+        default=None,
+        description="Optional display information. Absent on older Hub versions.",
+    )
+    image_limits: PackageImageLimits | None = pydantic.Field(
+        default=None,
+        description="Image upload limits configured by this Hub. Absent on older Hub versions.",
+        validation_alias="imageLimits",
+        serialization_alias="imageLimits",
+    )
     package_id: PackageId = pydantic.Field(
         description="ID of the package.",
         validation_alias="packageId",
@@ -448,10 +690,14 @@ class GetPackageDetailsOutput(pydantic.BaseModel):
     kind: str | None = pydantic.Field(
         default=None, description='Free-form kind of the package (e.g., "rugix-app").'
     )
-    version_count: int = pydantic.Field(
+    version_count: _sidex.U64 = pydantic.Field(
         description="Number of versions of the package.",
         validation_alias="versionCount",
         serialization_alias="versionCount",
+    )
+    retention: PackageVersionRetention | None = pydantic.Field(
+        default=None,
+        description="Package retention policy. Absent on older Hub versions.",
     )
     metadata: dict[str, _schema_json.JsonValue] = pydantic.Field(
         description="Package-level metadata."
@@ -461,7 +707,7 @@ class GetPackageDetailsOutput(pydantic.BaseModel):
     )
 
 
-class PackageAsset(pydantic.BaseModel):
+class PackageAsset(_sidex.Model):
     """One asset attached at the package level."""
 
     model_config = pydantic.ConfigDict(
@@ -472,13 +718,17 @@ class PackageAsset(pydantic.BaseModel):
         validation_alias="assetId", serialization_alias="assetId"
     )
     filename: str
-    size: int
+    size: _sidex.U64
     digest: _schema_digest.Digest
     status: RepositoryAssetStatus
+    storage: RepositoryAssetStorage | None = pydantic.Field(
+        default=None,
+        description="Latest storage check. Absent when connected to an older Hub.",
+    )
     metadata: dict[str, _schema_json.JsonValue]
 
 
-class AddPackageAssetAction(pydantic.BaseModel):
+class AddPackageAssetAction(_sidex.Model):
     """Attach a repository asset to a package under the given filename.
 
     Symmetric to `AddPackageVersionAssetAction` but for the package
@@ -500,7 +750,7 @@ class AddPackageAssetAction(pydantic.BaseModel):
     metadata: dict[str, _schema_json.JsonValue] | None = pydantic.Field(default=None)
 
 
-class RemovePackageAssetAction(pydantic.BaseModel):
+class RemovePackageAssetAction(_sidex.Model):
     """Remove a package asset by filename."""
 
     model_config = pydantic.ConfigDict(
@@ -513,7 +763,7 @@ class RemovePackageAssetAction(pydantic.BaseModel):
     filename: str
 
 
-class SetPackageAssetMetadataAction(pydantic.BaseModel):
+class SetPackageAssetMetadataAction(_sidex.Model):
     """Replace the metadata on a package asset."""
 
     model_config = pydantic.ConfigDict(
@@ -527,13 +777,16 @@ class SetPackageAssetMetadataAction(pydantic.BaseModel):
     metadata: dict[str, _schema_json.JsonValue]
 
 
-class CreatePackageAction(pydantic.BaseModel):
+class CreatePackageAction(_sidex.Model):
     """Create a new package."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    presentation: PackagePresentationUpdate | None = pydantic.Field(
+        default=None, description="Optional initial display information."
+    )
     repository_id: RepositoryId = pydantic.Field(
         description="ID of the repository.",
         validation_alias="repositoryId",
@@ -548,7 +801,88 @@ class CreatePackageAction(pydantic.BaseModel):
     )
 
 
-class CreatePackageSuccess(pydantic.BaseModel):
+class PackagePresentation(_sidex.Model):
+    """Display information for a package, independent of its URL-safe name."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    display_name: str | None = pydantic.Field(
+        default=None,
+        description="Human-readable name. Absent when the URL-safe package name is used.",
+        validation_alias="displayName",
+        serialization_alias="displayName",
+    )
+    description: str | None = pydantic.Field(
+        default=None,
+        description="CommonMark description. Raw HTML is not rendered by the Hub UI.",
+    )
+    image_url: str | None = pydantic.Field(
+        default=None,
+        description="Root-relative URL for the PNG on this Hub. Absent when no image is set.\nFetch with the same credentials as package details. Supports ETag validation.",
+        validation_alias="imageUrl",
+        serialization_alias="imageUrl",
+    )
+
+
+class PackagePresentationUpdate(_sidex.Model):
+    """Replace display text and optionally change the package image."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    display_name: str | None = pydantic.Field(
+        default=None,
+        description="Human-readable name. Omit to display the URL-safe package name.",
+        validation_alias="displayName",
+        serialization_alias="displayName",
+    )
+    description: str | None = pydantic.Field(
+        default=None,
+        description="CommonMark description. Raw HTML is not rendered by the Hub UI.",
+    )
+    image: PackageImageUpdate | None = pydantic.Field(
+        default=None,
+        description="Omit to preserve the current image, or leave a new package without an image.",
+    )
+
+
+class PackageImageLimits(_sidex.Model):
+    """Limits for a package image, applied before it is stored."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    max_bytes: _sidex.U32 = pydantic.Field(
+        description="Maximum decoded file size in bytes.",
+        validation_alias="maxBytes",
+        serialization_alias="maxBytes",
+    )
+    max_dimension: _sidex.U32 = pydantic.Field(
+        description="Maximum width and height in pixels.",
+        validation_alias="maxDimension",
+        serialization_alias="maxDimension",
+    )
+
+
+class SetPackagePresentationAction(_sidex.Model):
+    """Replace display text and optionally change the image.
+    Omitted display name and description are cleared; an omitted image is preserved."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    package_id: PackageId = pydantic.Field(
+        validation_alias="packageId", serialization_alias="packageId"
+    )
+    presentation: PackagePresentationUpdate
+
+
+class CreatePackageSuccess(_sidex.Model):
     """Successfully created a package."""
 
     model_config = pydantic.ConfigDict(
@@ -562,7 +896,7 @@ class CreatePackageSuccess(pydantic.BaseModel):
     )
 
 
-class DeletePackageAction(pydantic.BaseModel):
+class DeletePackageAction(_sidex.Model):
     """Delete a package."""
 
     model_config = pydantic.ConfigDict(
@@ -576,7 +910,7 @@ class DeletePackageAction(pydantic.BaseModel):
     )
 
 
-class SetPackageMetadataAction(pydantic.BaseModel):
+class SetPackageMetadataAction(_sidex.Model):
     """Set metadata on a package."""
 
     model_config = pydantic.ConfigDict(
@@ -593,7 +927,7 @@ class SetPackageMetadataAction(pydantic.BaseModel):
     )
 
 
-class SetPackageKindAction(pydantic.BaseModel):
+class SetPackageKindAction(_sidex.Model):
     """Set the kind of a package."""
 
     model_config = pydantic.ConfigDict(
@@ -611,7 +945,7 @@ class SetPackageKindAction(pydantic.BaseModel):
     )
 
 
-class SetPackageNameAction(pydantic.BaseModel):
+class SetPackageNameAction(_sidex.Model):
     """Set the name of a package."""
 
     model_config = pydantic.ConfigDict(
@@ -626,7 +960,7 @@ class SetPackageNameAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="New name of the package.")
 
 
-class QueryPackageVersionsAction(pydantic.BaseModel):
+class QueryPackageVersionsAction(_sidex.Model):
     """Query the versions of a package."""
 
     model_config = pydantic.ConfigDict(
@@ -640,7 +974,7 @@ class QueryPackageVersionsAction(pydantic.BaseModel):
     )
 
 
-class QueryPackageVersionsOutput(pydantic.BaseModel):
+class QueryPackageVersionsOutput(_sidex.Model):
     """Output of querying the versions of a package."""
 
     model_config = pydantic.ConfigDict(
@@ -652,7 +986,7 @@ class QueryPackageVersionsOutput(pydantic.BaseModel):
     )
 
 
-class QueryPackageVersionsItem(pydantic.BaseModel):
+class QueryPackageVersionsItem(_sidex.Model):
     """Package version query item."""
 
     model_config = pydantic.ConfigDict(
@@ -672,12 +1006,22 @@ class QueryPackageVersionsItem(pydantic.BaseModel):
         validation_alias="createdAt",
         serialization_alias="createdAt",
     )
+    delete_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Explicit deletion deadline. Package retention can delete the version earlier.",
+        validation_alias="deleteAt",
+        serialization_alias="deleteAt",
+    )
+    sealed: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Sealed versions reject content changes and all deletion. Absent on older Hub versions.",
+    )
     tags: list[PackageVersionTag] = pydantic.Field(
         description="Tags of the package version."
     )
 
 
-class PackageVersionTag(pydantic.BaseModel):
+class PackageVersionTag(_sidex.Model):
     """Package version tag."""
 
     model_config = pydantic.ConfigDict(
@@ -685,10 +1029,12 @@ class PackageVersionTag(pydantic.BaseModel):
     )
 
     tag: str = pydantic.Field(description="Tag of the package version.")
-    locked: bool = pydantic.Field(description="Indicates whether the tag is locked.")
+    locked: _sidex.Bool = pydantic.Field(
+        description="Indicates whether the tag is locked."
+    )
 
 
-class AddTagItem(pydantic.BaseModel):
+class AddTagItem(_sidex.Model):
     """Add tag item."""
 
     model_config = pydantic.ConfigDict(
@@ -696,17 +1042,17 @@ class AddTagItem(pydantic.BaseModel):
     )
 
     tag: str = pydantic.Field(description="Tag to add.")
-    locked: bool | None = pydantic.Field(
+    locked: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Indicates whether the tag should be locked.\n\nDefault to false.",
     )
-    reassign: bool | None = pydantic.Field(
+    reassign: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Indicates whether the tag should be reassigned, if it already exists.\n\nDefaults to true.",
     )
 
 
-class RemoveTagItem(pydantic.BaseModel):
+class RemoveTagItem(_sidex.Model):
     """Remove tag item."""
 
     model_config = pydantic.ConfigDict(
@@ -716,7 +1062,7 @@ class RemoveTagItem(pydantic.BaseModel):
     tag: str = pydantic.Field(description="Tag to remove.")
 
 
-class PackageVersionAsset(pydantic.BaseModel):
+class PackageVersionAsset(_sidex.Model):
     """Package version asset."""
 
     model_config = pydantic.ConfigDict(
@@ -729,15 +1075,19 @@ class PackageVersionAsset(pydantic.BaseModel):
         validation_alias="assetId",
         serialization_alias="assetId",
     )
-    size: int = pydantic.Field(description="Size of the asset.")
+    size: _sidex.U64 = pydantic.Field(description="Size of the asset.")
     digest: _schema_digest.Digest = pydantic.Field(description="Digest of the asset.")
     status: RepositoryAssetStatus = pydantic.Field(description="Status of the asset.")
+    storage: RepositoryAssetStorage | None = pydantic.Field(
+        default=None,
+        description="Latest storage check. Absent when connected to an older Hub.",
+    )
     metadata: dict[str, _schema_json.JsonValue] = pydantic.Field(
         description="Arbitrary metadata associated with this asset in the version."
     )
 
 
-class ResolvePackageVersionByPathAction(pydantic.BaseModel):
+class ResolvePackageVersionByPathAction(_sidex.Model):
     """Resolve a package version by its path."""
 
     model_config = pydantic.ConfigDict(
@@ -749,7 +1099,7 @@ class ResolvePackageVersionByPathAction(pydantic.BaseModel):
     tag: str = pydantic.Field(description="Tag or ID of the version.")
 
 
-class ResolvePackageVersionByPathSuccess(pydantic.BaseModel):
+class ResolvePackageVersionByPathSuccess(_sidex.Model):
     """Successfully resolved package version by path."""
 
     model_config = pydantic.ConfigDict(
@@ -773,7 +1123,7 @@ class ResolvePackageVersionByPathSuccess(pydantic.BaseModel):
     )
 
 
-class GetPackageVersionDetailsAction(pydantic.BaseModel):
+class GetPackageVersionDetailsAction(_sidex.Model):
     """Get information about a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -787,7 +1137,7 @@ class GetPackageVersionDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetPackageVersionDetailsOutput(pydantic.BaseModel):
+class GetPackageVersionDetailsOutput(_sidex.Model):
     """Output of getting information about a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -819,9 +1169,19 @@ class GetPackageVersionDetailsOutput(pydantic.BaseModel):
     metadata: dict[str, _schema_json.JsonValue] = pydantic.Field(
         description="Version-level metadata."
     )
+    delete_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Explicit deletion deadline. Package retention can delete the version earlier.",
+        validation_alias="deleteAt",
+        serialization_alias="deleteAt",
+    )
+    sealed: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Sealed versions reject content changes and all deletion. Absent on older Hub versions.",
+    )
 
 
-class CreatePackageVersionAction(pydantic.BaseModel):
+class CreatePackageVersionAction(_sidex.Model):
     """Create a new package version."""
 
     model_config = pydantic.ConfigDict(
@@ -836,6 +1196,12 @@ class CreatePackageVersionAction(pydantic.BaseModel):
     name: str | None = pydantic.Field(
         default=None, description="Optional name of the version."
     )
+    delete_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Earliest automatic deletion time; must be in the future. Package retention applies independently.\nRemoves the version and all tags. Unused assets follow repository cleanup policy.",
+        validation_alias="deleteAt",
+        serialization_alias="deleteAt",
+    )
     tags: list[AddTagItem] | None = pydantic.Field(
         default=None, description="Tags to add to the package version."
     )
@@ -844,7 +1210,7 @@ class CreatePackageVersionAction(pydantic.BaseModel):
     )
 
 
-class CreatePackageVersionSuccess(pydantic.BaseModel):
+class CreatePackageVersionSuccess(_sidex.Model):
     """Package version creation has been successful."""
 
     model_config = pydantic.ConfigDict(
@@ -858,7 +1224,7 @@ class CreatePackageVersionSuccess(pydantic.BaseModel):
     )
 
 
-class DeletePackageVersionAction(pydantic.BaseModel):
+class DeletePackageVersionAction(_sidex.Model):
     """Delete a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -872,7 +1238,27 @@ class DeletePackageVersionAction(pydantic.BaseModel):
     )
 
 
-class SetPackageVersionNameAction(pydantic.BaseModel):
+class SetPackageVersionDeletionScheduleAction(_sidex.Model):
+    """Schedule or cancel automatic deletion. Requires permission to manage versions.
+    Deletion removes the version and all tags, including locked tags. It does not
+    check device installations. Unused assets follow the repository cleanup policy."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    version_id: PackageVersionId = pydantic.Field(
+        validation_alias="versionId", serialization_alias="versionId"
+    )
+    delete_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Future deadline. Null or omission cancels this schedule; package retention still applies.\nA deadline makes deletion eligible; background processing may delay it.",
+        validation_alias="deleteAt",
+        serialization_alias="deleteAt",
+    )
+
+
+class SetPackageVersionNameAction(_sidex.Model):
     """Set the name of a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -889,7 +1275,7 @@ class SetPackageVersionNameAction(pydantic.BaseModel):
     )
 
 
-class SetPackageVersionMetadataAction(pydantic.BaseModel):
+class SetPackageVersionMetadataAction(_sidex.Model):
     """Set metadata on a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -906,7 +1292,7 @@ class SetPackageVersionMetadataAction(pydantic.BaseModel):
     )
 
 
-class AddPackageVersionAssetAction(pydantic.BaseModel):
+class AddPackageVersionAssetAction(_sidex.Model):
     """Add an asset to a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -930,7 +1316,7 @@ class AddPackageVersionAssetAction(pydantic.BaseModel):
     )
 
 
-class RemovePackageVersionAssetAction(pydantic.BaseModel):
+class RemovePackageVersionAssetAction(_sidex.Model):
     """Remove an asset from a package version."""
 
     model_config = pydantic.ConfigDict(
@@ -945,7 +1331,7 @@ class RemovePackageVersionAssetAction(pydantic.BaseModel):
     filename: str = pydantic.Field(description="Filename of the asset.")
 
 
-class SetPackageVersionAssetMetadataAction(pydantic.BaseModel):
+class SetPackageVersionAssetMetadataAction(_sidex.Model):
     """Set metadata on a package version asset."""
 
     model_config = pydantic.ConfigDict(
@@ -963,7 +1349,7 @@ class SetPackageVersionAssetMetadataAction(pydantic.BaseModel):
     )
 
 
-class TagPackageVersionAction(pydantic.BaseModel):
+class TagPackageVersionAction(_sidex.Model):
     """Add tags to a version."""
 
     model_config = pydantic.ConfigDict(
@@ -978,7 +1364,7 @@ class TagPackageVersionAction(pydantic.BaseModel):
     tags: list[AddTagItem] = pydantic.Field(description="Tags to add.")
 
 
-class UntagPackageVersionAction(pydantic.BaseModel):
+class UntagPackageVersionAction(_sidex.Model):
     """Remove tags from a version."""
 
     model_config = pydantic.ConfigDict(
@@ -993,7 +1379,7 @@ class UntagPackageVersionAction(pydantic.BaseModel):
     tags: list[RemoveTagItem] = pydantic.Field(description="Tags to remove.")
 
 
-class ResolvePackageVersionAssetByPathAction(pydantic.BaseModel):
+class ResolvePackageVersionAssetByPathAction(_sidex.Model):
     """Resolve a version asset by its path."""
 
     model_config = pydantic.ConfigDict(
@@ -1006,7 +1392,7 @@ class ResolvePackageVersionAssetByPathAction(pydantic.BaseModel):
     filename: str = pydantic.Field(description="Filename or ID of the asset.")
 
 
-class ResolvePackageVersionAssetByPathSuccess(pydantic.BaseModel):
+class ResolvePackageVersionAssetByPathSuccess(_sidex.Model):
     """Successfully resolved version asset by path."""
 
     model_config = pydantic.ConfigDict(
@@ -1035,7 +1421,7 @@ class ResolvePackageVersionAssetByPathSuccess(pydantic.BaseModel):
     )
 
 
-class SetRepositoryS3ConfigAction(pydantic.BaseModel):
+class SetRepositoryS3ConfigAction(_sidex.Model):
     """Set the S3 configuration for the repository."""
 
     model_config = pydantic.ConfigDict(
@@ -1054,7 +1440,7 @@ class SetRepositoryS3ConfigAction(pydantic.BaseModel):
     )
 
 
-class GetRepositoryS3ConfigAction(pydantic.BaseModel):
+class GetRepositoryS3ConfigAction(_sidex.Model):
     """Get the S3 configuration for the repository."""
 
     model_config = pydantic.ConfigDict(
@@ -1068,7 +1454,7 @@ class GetRepositoryS3ConfigAction(pydantic.BaseModel):
     )
 
 
-class GetRepositoryS3ConfigOutput(pydantic.BaseModel):
+class GetRepositoryS3ConfigOutput(_sidex.Model):
     """Output of getting the S3 configuration for the repository.
 
     This intentionally does not include the secret access key."""
@@ -1077,6 +1463,9 @@ class GetRepositoryS3ConfigOutput(pydantic.BaseModel):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    source: RepositoryStorageSource = pydantic.Field(
+        description="Effective storage source. Inherited credentials are not exposed here."
+    )
     s_3_config: RepositoryS3Config = pydantic.Field(
         description="S3 config for the repository.",
         validation_alias="s3Config",
@@ -1084,7 +1473,7 @@ class GetRepositoryS3ConfigOutput(pydantic.BaseModel):
     )
 
 
-class GetAssetDetailsAction(pydantic.BaseModel):
+class GetAssetDetailsAction(_sidex.Model):
     """Get information about an asset."""
 
     model_config = pydantic.ConfigDict(
@@ -1098,7 +1487,7 @@ class GetAssetDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetAssetDetailsOutput(pydantic.BaseModel):
+class GetAssetDetailsOutput(_sidex.Model):
     """Output of getting information about an asset."""
 
     model_config = pydantic.ConfigDict(
@@ -1110,17 +1499,21 @@ class GetAssetDetailsOutput(pydantic.BaseModel):
         validation_alias="assetId",
         serialization_alias="assetId",
     )
-    size: int = pydantic.Field(description="Size of the asset.")
+    size: _sidex.U64 = pydantic.Field(description="Size of the asset.")
     digest: _schema_digest.Digest = pydantic.Field(description="Digest of the asset.")
     status: RepositoryAssetStatus = pydantic.Field(description="Status of the asset.")
-    reference_count: int = pydantic.Field(
-        description="Number of package versions that refer to the asset.",
+    storage: RepositoryAssetStorage | None = pydantic.Field(
+        default=None,
+        description="Latest storage check. Absent when connected to an older Hub.",
+    )
+    reference_count: _sidex.U64 = pydantic.Field(
+        description="Number of package and package-version attachments that retain the asset.",
         validation_alias="referenceCount",
         serialization_alias="referenceCount",
     )
 
 
-class CreateAssetAction(pydantic.BaseModel):
+class CreateAssetAction(_sidex.Model):
     """Create an asset."""
 
     model_config = pydantic.ConfigDict(
@@ -1132,12 +1525,13 @@ class CreateAssetAction(pydantic.BaseModel):
         validation_alias="repositoryId",
         serialization_alias="repositoryId",
     )
-    size: int = pydantic.Field(description="Size of the asset.")
+    size: _sidex.U64 = pydantic.Field(description="Size of the asset.")
     digest: _schema_digest.Digest = pydantic.Field(description="Digest of the asset.")
 
 
-class DeleteAssetAction(pydantic.BaseModel):
-    """Delete an asset."""
+class DeleteAssetAction(_sidex.Model):
+    """Schedule deletion of an unused asset. Referenced assets are rejected.
+    The asset remains visible until object-storage deletion completes."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -1150,7 +1544,7 @@ class DeleteAssetAction(pydantic.BaseModel):
     )
 
 
-class IssueAssetDownloadUrlAction(pydantic.BaseModel):
+class IssueAssetDownloadUrlAction(_sidex.Model):
     """Issue a URL for downloading an asset."""
 
     model_config = pydantic.ConfigDict(
@@ -1167,7 +1561,7 @@ class IssueAssetDownloadUrlAction(pydantic.BaseModel):
     )
 
 
-class IssueAssetDownloadUrlOutput(pydantic.BaseModel):
+class IssueAssetDownloadUrlOutput(_sidex.Model):
     """Output of issuing a URL for downloading an asset."""
 
     model_config = pydantic.ConfigDict(
@@ -1177,7 +1571,7 @@ class IssueAssetDownloadUrlOutput(pydantic.BaseModel):
     url: str = pydantic.Field(description="URL for downloading the asset.")
 
 
-class IssueAssetUploadUrlAction(pydantic.BaseModel):
+class IssueAssetUploadUrlAction(_sidex.Model):
     """Issue a URL for uploading an asset."""
 
     model_config = pydantic.ConfigDict(
@@ -1191,23 +1585,55 @@ class IssueAssetUploadUrlAction(pydantic.BaseModel):
     )
 
 
-class IssueAssetUploadUrlOutput(pydantic.BaseModel):
+class IssueAssetUploadUrlOutput(_sidex.Model):
     """Output of issuing a URL for uploading an asset."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    url: str = pydantic.Field(description="URL for uploading the asset.")
+    url: str = pydantic.Field(
+        description="Compatibility URL for uploading the asset without verification headers.\n\nObjects uploaded through this URL remain dangling. New clients should use\n`verified_url`, apply every entry in `headers`, and finalize the upload."
+    )
+    verified_url: str | None = pydantic.Field(
+        default=None,
+        description="URL for an upload whose digest and ownership can be verified by the hub.",
+        validation_alias="verifiedUrl",
+        serialization_alias="verifiedUrl",
+    )
+    headers: dict[str, str] | None = pydantic.Field(
+        default=None,
+        description="Headers that must accompany a request to `verified_url`.",
+    )
 
 
-class QueryAuditLogEventsAction(pydantic.BaseModel):
+class FinalizeAssetUploadAction(_sidex.Model):
+    """Verify an uploaded object and make its asset available.
+
+    This action is idempotent: finalizing an already available asset succeeds."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    asset_id: RepositoryAssetId = pydantic.Field(
+        description="ID of the pending asset to finalize.",
+        validation_alias="assetId",
+        serialization_alias="assetId",
+    )
+
+
+class QueryAuditLogEventsAction(_sidex.Model):
     """Query the audit log of the repository."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
     repository_id: RepositoryId = pydantic.Field(
         description="ID of the repository.",
         validation_alias="repositoryId",
@@ -1215,15 +1641,81 @@ class QueryAuditLogEventsAction(pydantic.BaseModel):
     )
 
 
-class QueryAuditLogEventsOutput(pydantic.BaseModel):
+class QueryAuditLogEventsOutput(_sidex.Model):
     """Output of querying the audit log of the repository."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     events: list[_schema_audit.AuditLogEvent] = pydantic.Field(
         description="List of audit log events."
+    )
+
+
+class DeleteRepositoryS3ConfigAction(_sidex.Model):
+    """Remove a repository override and use organization storage when configured."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    repository_id: RepositoryId = pydantic.Field(
+        validation_alias="repositoryId", serialization_alias="repositoryId"
+    )
+
+
+class PackageVersionRetention(_sidex.Model):
+    """Opt-in retention of unsealed versions, evaluated per package by creation time.
+    Either exceeded limit makes a version eligible for deletion, including existing versions."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    enabled: _sidex.Bool
+    max_versions: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum number of newest unsealed versions to keep. Sealed versions do not count.",
+        validation_alias="maxVersions",
+        serialization_alias="maxVersions",
+    )
+    max_age_days: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum age in fixed 24-hour days. This can expire every unsealed version.",
+        validation_alias="maxAgeDays",
+        serialization_alias="maxAgeDays",
+    )
+
+
+class SetPackageVersionRetentionAction(_sidex.Model):
+    """Replace the package retention policy. Requires permission to manage versions."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    package_id: PackageId = pydantic.Field(
+        validation_alias="packageId", serialization_alias="packageId"
+    )
+    retention: PackageVersionRetention
+
+
+class SealPackageVersionAction(_sidex.Model):
+    """Permanently seal a version. Requires permission to manage versions.
+    Sealing cancels scheduled deletion and blocks changes to the name, metadata,
+    and attachments, as well as deletion of the version, package, or repository.
+    Tags remain editable. Sealing cannot be reversed."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    version_id: PackageVersionId = pydantic.Field(
+        validation_alias="versionId", serialization_alias="versionId"
     )
 
 
@@ -1247,6 +1739,43 @@ type RepositoryAssetStatus = (
 )
 
 
+class RepositoryAssetStorageStatus_Unknown(pydantic.RootModel[Literal["Unknown"]]):
+    pass
+
+
+class RepositoryAssetStorageStatus_Present(pydantic.RootModel[Literal["Present"]]):
+    pass
+
+
+class RepositoryAssetStorageStatus_Verified(pydantic.RootModel[Literal["Verified"]]):
+    pass
+
+
+class RepositoryAssetStorageStatus_Missing(pydantic.RootModel[Literal["Missing"]]):
+    pass
+
+
+class RepositoryAssetStorageStatus_Mismatched(
+    pydantic.RootModel[Literal["Mismatched"]]
+):
+    pass
+
+
+class RepositoryAssetStorageStatus_Error(pydantic.RootModel[Literal["Error"]]):
+    pass
+
+
+# Result of the latest non-destructive object-storage check.
+type RepositoryAssetStorageStatus = (
+    RepositoryAssetStorageStatus_Unknown
+    | RepositoryAssetStorageStatus_Present
+    | RepositoryAssetStorageStatus_Verified
+    | RepositoryAssetStorageStatus_Missing
+    | RepositoryAssetStorageStatus_Mismatched
+    | RepositoryAssetStorageStatus_Error
+)
+
+
 class RepositoryVisibility_Public(pydantic.RootModel[Literal["Public"]]):
     pass
 
@@ -1259,7 +1788,7 @@ class RepositoryVisibility_Private(pydantic.RootModel[Literal["Private"]]):
 type RepositoryVisibility = RepositoryVisibility_Public | RepositoryVisibility_Private
 
 
-class ResolveRepositoryNameOutput_Found(pydantic.BaseModel):
+class ResolveRepositoryNameOutput_Found(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1273,7 +1802,7 @@ class ResolveRepositoryNameOutput_Found(pydantic.BaseModel):
         return self.repository_id
 
 
-class ResolveRepositoryNameOutput_NotFound(pydantic.BaseModel):
+class ResolveRepositoryNameOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1288,7 +1817,7 @@ type ResolveRepositoryNameOutput = Annotated[
 ]
 
 
-class CreateRepositoryOutput_NameAlreadyExists(pydantic.BaseModel):
+class CreateRepositoryOutput_NameAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1296,7 +1825,7 @@ class CreateRepositoryOutput_NameAlreadyExists(pydantic.BaseModel):
     result: Literal["NameAlreadyExists"] = "NameAlreadyExists"
 
 
-class CreateRepositoryOutput_Created(pydantic.BaseModel):
+class CreateRepositoryOutput_Created(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1319,7 +1848,7 @@ type CreateRepositoryOutput = Annotated[
 ]
 
 
-class SetRepositorySlugOutput_SlugAlreadyExists(pydantic.BaseModel):
+class SetRepositorySlugOutput_SlugAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1327,7 +1856,7 @@ class SetRepositorySlugOutput_SlugAlreadyExists(pydantic.BaseModel):
     result: Literal["SlugAlreadyExists"] = "SlugAlreadyExists"
 
 
-class SetRepositorySlugOutput_Success(pydantic.BaseModel):
+class SetRepositorySlugOutput_Success(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1342,7 +1871,39 @@ type SetRepositorySlugOutput = Annotated[
 ]
 
 
-class ResolvePackageByPathOutput_Found(pydantic.BaseModel):
+class RepositoryAssetFilter_All(pydantic.RootModel[Literal["All"]]):
+    pass
+
+
+class RepositoryAssetFilter_Unused(pydantic.RootModel[Literal["Unused"]]):
+    pass
+
+
+class RepositoryAssetFilter_Issues(pydantic.RootModel[Literal["Issues"]]):
+    pass
+
+
+# Restrict the asset inventory without changing repository totals.
+type RepositoryAssetFilter = (
+    RepositoryAssetFilter_All
+    | RepositoryAssetFilter_Unused
+    | RepositoryAssetFilter_Issues
+)
+
+
+class RepositoryAssetSort_Largest(pydantic.RootModel[Literal["Largest"]]):
+    pass
+
+
+class RepositoryAssetSort_CleanupDate(pydantic.RootModel[Literal["CleanupDate"]]):
+    pass
+
+
+# Asset ordering, with a stable internal ID as the tie breaker.
+type RepositoryAssetSort = RepositoryAssetSort_Largest | RepositoryAssetSort_CleanupDate
+
+
+class ResolvePackageByPathOutput_Found(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1365,7 +1926,7 @@ class ResolvePackageByPathOutput_Found(pydantic.BaseModel):
         )
 
 
-class ResolvePackageByPathOutput_NotFound(pydantic.BaseModel):
+class ResolvePackageByPathOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1380,7 +1941,7 @@ type ResolvePackageByPathOutput = Annotated[
 ]
 
 
-class AddPackageAssetOutput_FilenameAlreadyExists(pydantic.BaseModel):
+class AddPackageAssetOutput_FilenameAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1388,7 +1949,7 @@ class AddPackageAssetOutput_FilenameAlreadyExists(pydantic.BaseModel):
     result: Literal["FilenameAlreadyExists"] = "FilenameAlreadyExists"
 
 
-class AddPackageAssetOutput_Added(pydantic.BaseModel):
+class AddPackageAssetOutput_Added(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1403,7 +1964,36 @@ type AddPackageAssetOutput = Annotated[
 ]
 
 
-class CreatePackageOutput_NameAlreadyExists(pydantic.BaseModel):
+class PackageImageUpdate_Replace(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    tag: Literal["Replace"] = "Replace"
+    image_png: str = pydantic.Field(
+        validation_alias="imagePng", serialization_alias="imagePng"
+    )
+
+    def payload(self) -> "str":
+        return self.image_png
+
+
+class PackageImageUpdate_Remove(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    tag: Literal["Remove"] = "Remove"
+
+
+# Change the image while saving package display information.
+type PackageImageUpdate = Annotated[
+    PackageImageUpdate_Replace | PackageImageUpdate_Remove,
+    pydantic.Discriminator("tag"),
+]
+
+
+class CreatePackageOutput_NameAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1411,7 +2001,7 @@ class CreatePackageOutput_NameAlreadyExists(pydantic.BaseModel):
     result: Literal["NameAlreadyExists"] = "NameAlreadyExists"
 
 
-class CreatePackageOutput_Created(pydantic.BaseModel):
+class CreatePackageOutput_Created(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1434,7 +2024,7 @@ type CreatePackageOutput = Annotated[
 ]
 
 
-class SetPackageNameOutput_NameAlreadyExists(pydantic.BaseModel):
+class SetPackageNameOutput_NameAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1442,7 +2032,7 @@ class SetPackageNameOutput_NameAlreadyExists(pydantic.BaseModel):
     result: Literal["NameAlreadyExists"] = "NameAlreadyExists"
 
 
-class SetPackageNameOutput_Success(pydantic.BaseModel):
+class SetPackageNameOutput_Success(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1457,7 +2047,7 @@ type SetPackageNameOutput = Annotated[
 ]
 
 
-class ResolvePackageVersionByPathOutput_Found(pydantic.BaseModel):
+class ResolvePackageVersionByPathOutput_Found(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1487,7 +2077,7 @@ class ResolvePackageVersionByPathOutput_Found(pydantic.BaseModel):
         )
 
 
-class ResolvePackageVersionByPathOutput_NotFound(pydantic.BaseModel):
+class ResolvePackageVersionByPathOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1503,7 +2093,7 @@ type ResolvePackageVersionByPathOutput = Annotated[
 ]
 
 
-class CreatePackageVersionOutput_Created(pydantic.BaseModel):
+class CreatePackageVersionOutput_Created(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1523,7 +2113,7 @@ class CreatePackageVersionOutput_Created(pydantic.BaseModel):
 type CreatePackageVersionOutput = CreatePackageVersionOutput_Created
 
 
-class AddPackageVersionAssetOutput_FilenameAlreadyExists(pydantic.BaseModel):
+class AddPackageVersionAssetOutput_FilenameAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1531,7 +2121,7 @@ class AddPackageVersionAssetOutput_FilenameAlreadyExists(pydantic.BaseModel):
     result: Literal["FilenameAlreadyExists"] = "FilenameAlreadyExists"
 
 
-class AddPackageVersionAssetOutput_Added(pydantic.BaseModel):
+class AddPackageVersionAssetOutput_Added(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1547,7 +2137,7 @@ type AddPackageVersionAssetOutput = Annotated[
 ]
 
 
-class ResolvePackageVersionAssetByPathOutput_Found(pydantic.BaseModel):
+class ResolvePackageVersionAssetByPathOutput_Found(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1583,7 +2173,7 @@ class ResolvePackageVersionAssetByPathOutput_Found(pydantic.BaseModel):
         )
 
 
-class ResolvePackageVersionAssetByPathOutput_NotFound(pydantic.BaseModel):
+class ResolvePackageVersionAssetByPathOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1599,7 +2189,7 @@ type ResolvePackageVersionAssetByPathOutput = Annotated[
 ]
 
 
-class CreateAssetOutput_AssetAlreadyExists(pydantic.BaseModel):
+class CreateAssetOutput_AssetAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1613,7 +2203,7 @@ class CreateAssetOutput_AssetAlreadyExists(pydantic.BaseModel):
         return self.asset_id
 
 
-class CreateAssetOutput_Created(pydantic.BaseModel):
+class CreateAssetOutput_Created(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1632,3 +2222,23 @@ type CreateAssetOutput = Annotated[
     CreateAssetOutput_AssetAlreadyExists | CreateAssetOutput_Created,
     pydantic.Discriminator("result"),
 ]
+
+
+class RepositoryStorageSource_Unconfigured(pydantic.RootModel[Literal["Unconfigured"]]):
+    pass
+
+
+class RepositoryStorageSource_Repository(pydantic.RootModel[Literal["Repository"]]):
+    pass
+
+
+class RepositoryStorageSource_Organization(pydantic.RootModel[Literal["Organization"]]):
+    pass
+
+
+# The scope supplying repository storage.
+type RepositoryStorageSource = (
+    RepositoryStorageSource_Unconfigured
+    | RepositoryStorageSource_Repository
+    | RepositoryStorageSource_Organization
+)

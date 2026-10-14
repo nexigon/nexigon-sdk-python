@@ -7,6 +7,8 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import datetime as _schema_datetime  # noqa: F401
 
@@ -21,7 +23,7 @@ class JobId(str):
         return handler(str)
 
 
-class Job(pydantic.BaseModel):
+class Job(_sidex.Model):
     """Job."""
 
     model_config = pydantic.ConfigDict(
@@ -33,22 +35,22 @@ class Job(pydantic.BaseModel):
     )
     status: JobStatus = pydantic.Field(description="Status of the job.")
     job: str = pydantic.Field(description="Type of the job.")
-    queued: bool = pydantic.Field(
+    queued: _sidex.Bool = pydantic.Field(
         description="Indicates whether the job is currently queued for execution."
     )
-    attempts: int = pydantic.Field(description="Attempts of executing the job.")
-    retry_limit: int | None = pydantic.Field(
+    attempts: _sidex.U32 = pydantic.Field(description="Attempts of executing the job.")
+    retry_limit: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Maximum number of retries for the job.",
         validation_alias="retryLimit",
         serialization_alias="retryLimit",
     )
-    retry_delay: int = pydantic.Field(
+    retry_delay: _sidex.U32 = pydantic.Field(
         description="Delay in seconds for retrying the job.",
         validation_alias="retryDelay",
         serialization_alias="retryDelay",
     )
-    timeout: int = pydantic.Field(
+    timeout: _sidex.U32 = pydantic.Field(
         description="Timeout for an individual execution of the job (defaults to 30 minutes)."
     )
     created_at: _schema_datetime.Timestamp = pydantic.Field(
@@ -64,7 +66,7 @@ class Job(pydantic.BaseModel):
     )
 
 
-class QueryJobsAction(pydantic.BaseModel):
+class QueryJobsAction(_sidex.Model):
     """Query the jobs of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -72,7 +74,7 @@ class QueryJobsAction(pydantic.BaseModel):
     )
 
 
-class QueryJobsOutput(pydantic.BaseModel):
+class QueryJobsOutput(_sidex.Model):
     """Output of querying the jobs of the instance."""
 
     model_config = pydantic.ConfigDict(

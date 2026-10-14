@@ -7,7 +7,10 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
+    from . import authorization as _schema_authorization  # noqa: F401
     from . import datetime as _schema_datetime  # noqa: F401
     from . import devices as _schema_devices  # noqa: F401
     from . import jwt as _schema_jwt  # noqa: F401
@@ -64,7 +67,7 @@ class UserSessionToken(str):
         return handler(str)
 
 
-class QueryUsersAction(pydantic.BaseModel):
+class QueryUsersAction(_sidex.Model):
     """Query the users of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -72,7 +75,7 @@ class QueryUsersAction(pydantic.BaseModel):
     )
 
 
-class QueryUsersOutput(pydantic.BaseModel):
+class QueryUsersOutput(_sidex.Model):
     """Output of querying the users of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -82,7 +85,7 @@ class QueryUsersOutput(pydantic.BaseModel):
     users: list[QueryUsersItem] = pydantic.Field(description="List of users.")
 
 
-class QueryUsersItem(pydantic.BaseModel):
+class QueryUsersItem(_sidex.Model):
     """User item."""
 
     model_config = pydantic.ConfigDict(
@@ -101,12 +104,12 @@ class QueryUsersItem(pydantic.BaseModel):
         validation_alias="displayName",
         serialization_alias="displayName",
     )
-    is_admin: bool = pydantic.Field(
+    is_admin: _sidex.Bool = pydantic.Field(
         description="Whether the user is an instance admin.",
         validation_alias="isAdmin",
         serialization_alias="isAdmin",
     )
-    is_active: bool = pydantic.Field(
+    is_active: _sidex.Bool = pydantic.Field(
         description="Whether the user account has been activated.\n\nNew registrations start out inactive and are activated when the\nuser confirms their email address.",
         validation_alias="isActive",
         serialization_alias="isActive",
@@ -118,7 +121,7 @@ class QueryUsersItem(pydantic.BaseModel):
     )
 
 
-class GetUserDetailsAction(pydantic.BaseModel):
+class GetUserDetailsAction(_sidex.Model):
     """Get information about a user."""
 
     model_config = pydantic.ConfigDict(
@@ -132,7 +135,7 @@ class GetUserDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetUserDetailsOutput(pydantic.BaseModel):
+class GetUserDetailsOutput(_sidex.Model):
     """Information about the user."""
 
     model_config = pydantic.ConfigDict(
@@ -151,20 +154,23 @@ class GetUserDetailsOutput(pydantic.BaseModel):
         validation_alias="displayName",
         serialization_alias="displayName",
     )
-    is_admin: bool = pydantic.Field(
+    is_admin: _sidex.Bool = pydantic.Field(
         description="Whether the user is an instance admin.",
         validation_alias="isAdmin",
         serialization_alias="isAdmin",
     )
 
 
-class CreateUserAction(pydantic.BaseModel):
+class CreateUserAction(_sidex.Model):
     """Create a new user."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Authorization for this administrative action."
+    )
     email: str = pydantic.Field(description="Email of the user.")
     display_name: str | None = pydantic.Field(
         default=None,
@@ -175,7 +181,7 @@ class CreateUserAction(pydantic.BaseModel):
     password: str | None = pydantic.Field(
         default=None, description="Password of the user."
     )
-    is_admin: bool | None = pydantic.Field(
+    is_admin: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Whether the user is an instance admin.",
         validation_alias="isAdmin",
@@ -183,7 +189,7 @@ class CreateUserAction(pydantic.BaseModel):
     )
 
 
-class CreateUserSuccess(pydantic.BaseModel):
+class CreateUserSuccess(_sidex.Model):
     """User was created successfully."""
 
     model_config = pydantic.ConfigDict(
@@ -197,7 +203,7 @@ class CreateUserSuccess(pydantic.BaseModel):
     )
 
 
-class DeleteUserAction(pydantic.BaseModel):
+class DeleteUserAction(_sidex.Model):
     """Delete a user."""
 
     model_config = pydantic.ConfigDict(
@@ -211,7 +217,7 @@ class DeleteUserAction(pydantic.BaseModel):
     )
 
 
-class SetUserDisplayNameAction(pydantic.BaseModel):
+class SetUserDisplayNameAction(_sidex.Model):
     """Set the display name of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -230,26 +236,29 @@ class SetUserDisplayNameAction(pydantic.BaseModel):
     )
 
 
-class SetUserIsAdminAction(pydantic.BaseModel):
+class SetUserIsAdminAction(_sidex.Model):
     """Set whether the user is an instance administrator."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Authorization for this administrative action."
+    )
     user_id: UserId = pydantic.Field(
         description="ID of the user.",
         validation_alias="userId",
         serialization_alias="userId",
     )
-    is_admin: bool = pydantic.Field(
+    is_admin: _sidex.Bool = pydantic.Field(
         description="Whether the user is an instance administrator.",
         validation_alias="isAdmin",
         serialization_alias="isAdmin",
     )
 
 
-class SetUserPasswordAction(pydantic.BaseModel):
+class SetUserPasswordAction(_sidex.Model):
     """Set the password of a user.
 
     Admin-only operation that sets the password without requiring the current
@@ -259,6 +268,9 @@ class SetUserPasswordAction(pydantic.BaseModel):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Authorization for this administrative action."
+    )
     user_id: UserId = pydantic.Field(
         description="ID of the user.",
         validation_alias="userId",
@@ -267,7 +279,7 @@ class SetUserPasswordAction(pydantic.BaseModel):
     password: str = pydantic.Field(description="New password to set.")
 
 
-class SetUserEmailAction(pydantic.BaseModel):
+class SetUserEmailAction(_sidex.Model):
     """Set the email address of a user.
 
     Admin-only operation that updates the address without verification."""
@@ -276,6 +288,9 @@ class SetUserEmailAction(pydantic.BaseModel):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Authorization for this administrative action."
+    )
     user_id: UserId = pydantic.Field(
         description="ID of the user.",
         validation_alias="userId",
@@ -284,25 +299,23 @@ class SetUserEmailAction(pydantic.BaseModel):
     email: str = pydantic.Field(description="New email address.")
 
 
-class ChangeUserPasswordAction(pydantic.BaseModel):
+class ChangeUserPasswordAction(_sidex.Model):
     """Change the password of the current user.
 
-    Requires the user to provide their current password to re-verify their
-    identity, even if they are already authenticated."""
+    Requires account credentials in `authorization`, even if the user is
+    already authenticated."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Credentials that re-verify the current user session."
+    )
     user_id: UserId = pydantic.Field(
         description="ID of the user.",
         validation_alias="userId",
         serialization_alias="userId",
-    )
-    current_password: str = pydantic.Field(
-        description="Current password of the user.",
-        validation_alias="currentPassword",
-        serialization_alias="currentPassword",
     )
     new_password: str = pydantic.Field(
         description="New password to set.",
@@ -311,26 +324,23 @@ class ChangeUserPasswordAction(pydantic.BaseModel):
     )
 
 
-class InitiateUserEmailChangeAction(pydantic.BaseModel):
+class InitiateUserEmailChangeAction(_sidex.Model):
     """Initiate an email-address change for the current user.
 
-    Requires the user to provide their current password to re-verify their
-    identity. On success, a verification link is sent to the new address and
-    a notification is sent to the current address."""
+    Requires account credentials in `authorization`. On success, a verification
+    link is sent to the new address and a notification is sent to the current address."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Credentials that re-verify the current user session."
+    )
     user_id: UserId = pydantic.Field(
         description="ID of the user.",
         validation_alias="userId",
         serialization_alias="userId",
-    )
-    current_password: str = pydantic.Field(
-        description="Current password of the user.",
-        validation_alias="currentPassword",
-        serialization_alias="currentPassword",
     )
     new_email: str = pydantic.Field(
         description="New email address to switch to.",
@@ -339,7 +349,7 @@ class InitiateUserEmailChangeAction(pydantic.BaseModel):
     )
 
 
-class CompleteUserEmailChangeAction(pydantic.BaseModel):
+class CompleteUserEmailChangeAction(_sidex.Model):
     """Complete an email-address change using a verification token."""
 
     model_config = pydantic.ConfigDict(
@@ -351,7 +361,7 @@ class CompleteUserEmailChangeAction(pydantic.BaseModel):
     )
 
 
-class ResetUserPasswordAction(pydantic.BaseModel):
+class ResetUserPasswordAction(_sidex.Model):
     """Reset the password of a user.
 
     This will send an email to the user with a link to reset their password."""
@@ -363,7 +373,7 @@ class ResetUserPasswordAction(pydantic.BaseModel):
     email: str = pydantic.Field(description="Email of the user.")
 
 
-class CompleteUserPasswordResetAction(pydantic.BaseModel):
+class CompleteUserPasswordResetAction(_sidex.Model):
     """Complete the password reset of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -378,7 +388,7 @@ class CompleteUserPasswordResetAction(pydantic.BaseModel):
     password: str = pydantic.Field(description="New password of the user.")
 
 
-class QueryUserTokensAction(pydantic.BaseModel):
+class QueryUserTokensAction(_sidex.Model):
     """Query the tokens of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -392,7 +402,7 @@ class QueryUserTokensAction(pydantic.BaseModel):
     )
 
 
-class QueryUserTokensOutput(pydantic.BaseModel):
+class QueryUserTokensOutput(_sidex.Model):
     """Output of querying the tokens of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -404,7 +414,7 @@ class QueryUserTokensOutput(pydantic.BaseModel):
     )
 
 
-class QueryUserTokensItem(pydantic.BaseModel):
+class QueryUserTokensItem(_sidex.Model):
     """User token item."""
 
     model_config = pydantic.ConfigDict(
@@ -424,7 +434,7 @@ class QueryUserTokensItem(pydantic.BaseModel):
     name: str | None = pydantic.Field(default=None, description="Name of the token.")
 
 
-class QueryUserOrganizationsAction(pydantic.BaseModel):
+class QueryUserOrganizationsAction(_sidex.Model):
     """Query the organizations of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -438,7 +448,7 @@ class QueryUserOrganizationsAction(pydantic.BaseModel):
     )
 
 
-class QueryUserOrganizationsOutput(pydantic.BaseModel):
+class QueryUserOrganizationsOutput(_sidex.Model):
     """Output of querying the organizations of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -450,7 +460,7 @@ class QueryUserOrganizationsOutput(pydantic.BaseModel):
     )
 
 
-class QueryUserOrganizationsItem(pydantic.BaseModel):
+class QueryUserOrganizationsItem(_sidex.Model):
     """Organization item."""
 
     model_config = pydantic.ConfigDict(
@@ -463,7 +473,7 @@ class QueryUserOrganizationsItem(pydantic.BaseModel):
         serialization_alias="organizationId",
     )
     name: str = pydantic.Field(description="Name of the organization.")
-    requires_subscription: bool = pydantic.Field(
+    requires_subscription: _sidex.Bool = pydantic.Field(
         description="Whether the organization requires a paid subscription.",
         validation_alias="requiresSubscription",
         serialization_alias="requiresSubscription",
@@ -476,7 +486,7 @@ class QueryUserOrganizationsItem(pydantic.BaseModel):
     )
 
 
-class QueryUserOrganizationInvitationsAction(pydantic.BaseModel):
+class QueryUserOrganizationInvitationsAction(_sidex.Model):
     """Query the organization invitations of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -490,7 +500,7 @@ class QueryUserOrganizationInvitationsAction(pydantic.BaseModel):
     )
 
 
-class QueryUserOrganizationInvitationsOutput(pydantic.BaseModel):
+class QueryUserOrganizationInvitationsOutput(_sidex.Model):
     """Output of querying the organization invitations of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -502,7 +512,7 @@ class QueryUserOrganizationInvitationsOutput(pydantic.BaseModel):
     )
 
 
-class QueryUserOrganizationInvitationsItem(pydantic.BaseModel):
+class QueryUserOrganizationInvitationsItem(_sidex.Model):
     """Organization invitation item."""
 
     model_config = pydantic.ConfigDict(
@@ -519,7 +529,7 @@ class QueryUserOrganizationInvitationsItem(pydantic.BaseModel):
     )
 
 
-class QueryUserOrganizationInvitationsItemOrganization(pydantic.BaseModel):
+class QueryUserOrganizationInvitationsItemOrganization(_sidex.Model):
     """Organization invitation item organization."""
 
     model_config = pydantic.ConfigDict(
@@ -534,7 +544,7 @@ class QueryUserOrganizationInvitationsItemOrganization(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the organization.")
 
 
-class QueryUserSessionsAction(pydantic.BaseModel):
+class QueryUserSessionsAction(_sidex.Model):
     """Query the sessions of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -548,7 +558,7 @@ class QueryUserSessionsAction(pydantic.BaseModel):
     )
 
 
-class QueryUserSessionsOutput(pydantic.BaseModel):
+class QueryUserSessionsOutput(_sidex.Model):
     """Output of querying the sessions of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -558,7 +568,7 @@ class QueryUserSessionsOutput(pydantic.BaseModel):
     sessions: list[UserSession] = pydantic.Field(description="List of user sessions.")
 
 
-class UserSession(pydantic.BaseModel):
+class UserSession(_sidex.Model):
     """User session."""
 
     model_config = pydantic.ConfigDict(
@@ -587,7 +597,7 @@ class UserSession(pydantic.BaseModel):
     )
 
 
-class GetDevicePermissionsAction(pydantic.BaseModel):
+class GetDevicePermissionsAction(_sidex.Model):
     """Check the permissions of a user for a given device."""
 
     model_config = pydantic.ConfigDict(
@@ -606,27 +616,30 @@ class GetDevicePermissionsAction(pydantic.BaseModel):
     )
 
 
-class GetDevicePermissionsOutput(pydantic.BaseModel):
+class GetDevicePermissionsOutput(_sidex.Model):
     """Output of checking the permissions of a user for a given device."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    has_access: bool = pydantic.Field(
+    has_access: _sidex.Bool = pydantic.Field(
         description="Whether the user has access to the device.",
         validation_alias="hasAccess",
         serialization_alias="hasAccess",
     )
 
 
-class CreateUserTokenAction(pydantic.BaseModel):
+class CreateUserTokenAction(_sidex.Model):
     """Create a user token."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    authorization: _schema_authorization.ActionAuthorization = pydantic.Field(
+        description="Credentials that re-verify the current user session."
+    )
     user_id: UserId = pydantic.Field(
         description="ID of the user.",
         validation_alias="userId",
@@ -635,7 +648,7 @@ class CreateUserTokenAction(pydantic.BaseModel):
     name: str | None = pydantic.Field(default=None, description="Name of the token.")
 
 
-class CreateUserTokenOutput(pydantic.BaseModel):
+class CreateUserTokenOutput(_sidex.Model):
     """Output of creating a user token."""
 
     model_config = pydantic.ConfigDict(
@@ -650,7 +663,7 @@ class CreateUserTokenOutput(pydantic.BaseModel):
     token: UserToken = pydantic.Field(description="Token.")
 
 
-class DeleteUserTokenAction(pydantic.BaseModel):
+class DeleteUserTokenAction(_sidex.Model):
     """Delete a user token."""
 
     model_config = pydantic.ConfigDict(
@@ -664,7 +677,7 @@ class DeleteUserTokenAction(pydantic.BaseModel):
     )
 
 
-class TerminateUserSessionAction(pydantic.BaseModel):
+class TerminateUserSessionAction(_sidex.Model):
     """Terminate a user session.
 
     The acting user must own the session; sessions belonging to other
@@ -681,7 +694,7 @@ class TerminateUserSessionAction(pydantic.BaseModel):
     )
 
 
-class RegisterUserAction(pydantic.BaseModel):
+class RegisterUserAction(_sidex.Model):
     """Register a new user with an email and password."""
 
     model_config = pydantic.ConfigDict(
@@ -696,12 +709,12 @@ class RegisterUserAction(pydantic.BaseModel):
     )
     email: str = pydantic.Field(description="Email address of the user.")
     password: str = pydantic.Field(description="Password of the user.")
-    consented_to_terms: bool = pydantic.Field(
+    consented_to_terms: _sidex.Bool = pydantic.Field(
         description="Indicates whether the user has consented to the terms and conditions.\n\nThis must be `true` to register a user.",
         validation_alias="consentedToTerms",
         serialization_alias="consentedToTerms",
     )
-    consented_to_marketing: bool | None = pydantic.Field(
+    consented_to_marketing: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Indicates whether the user has consented to marketing communications.",
         validation_alias="consentedToMarketing",
@@ -709,25 +722,7 @@ class RegisterUserAction(pydantic.BaseModel):
     )
 
 
-class UserRegistration(pydantic.BaseModel):
-    """User registration."""
-
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    status: UserRegistrationStatus = pydantic.Field(description="Registration status.")
-    message: str | None = pydantic.Field(
-        default=None, description="Optional message to show to the user."
-    )
-    created_at: _schema_datetime.Timestamp = pydantic.Field(
-        description="Timestamp when the registration was created.",
-        validation_alias="createdAt",
-        serialization_alias="createdAt",
-    )
-
-
-class ResendRegistrationEmailAction(pydantic.BaseModel):
+class ResendRegistrationEmailAction(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -735,7 +730,7 @@ class ResendRegistrationEmailAction(pydantic.BaseModel):
     email: str = pydantic.Field(description="Email address of the user.")
 
 
-class CompleteRegistrationAction(pydantic.BaseModel):
+class CompleteRegistrationAction(_sidex.Model):
     """Complete the registration of a user."""
 
     model_config = pydantic.ConfigDict(
@@ -749,7 +744,7 @@ class CompleteRegistrationAction(pydantic.BaseModel):
     )
 
 
-class AcceptOrganizationInvitationAction(pydantic.BaseModel):
+class AcceptOrganizationInvitationAction(_sidex.Model):
     """Accept a organization invitation."""
 
     model_config = pydantic.ConfigDict(
@@ -763,7 +758,7 @@ class AcceptOrganizationInvitationAction(pydantic.BaseModel):
     )
 
 
-class CreateUserOutput_Created(pydantic.BaseModel):
+class CreateUserOutput_Created(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -779,7 +774,7 @@ class CreateUserOutput_Created(pydantic.BaseModel):
         return CreateUserSuccess(user_id=self.user_id)
 
 
-class CreateUserOutput_EmailAlreadyExists(pydantic.BaseModel):
+class CreateUserOutput_EmailAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -794,7 +789,7 @@ type CreateUserOutput = Annotated[
 ]
 
 
-class SetUserEmailOutput_Updated(pydantic.BaseModel):
+class SetUserEmailOutput_Updated(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -802,7 +797,7 @@ class SetUserEmailOutput_Updated(pydantic.BaseModel):
     result: Literal["Updated"] = "Updated"
 
 
-class SetUserEmailOutput_EmailAlreadyExists(pydantic.BaseModel):
+class SetUserEmailOutput_EmailAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -817,31 +812,7 @@ type SetUserEmailOutput = Annotated[
 ]
 
 
-class ChangeUserPasswordOutput_Completed(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    result: Literal["Completed"] = "Completed"
-
-
-class ChangeUserPasswordOutput_InvalidCurrentPassword(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    result: Literal["InvalidCurrentPassword"] = "InvalidCurrentPassword"
-
-
-# Output of [`ChangeUserPasswordAction`].
-type ChangeUserPasswordOutput = Annotated[
-    ChangeUserPasswordOutput_Completed
-    | ChangeUserPasswordOutput_InvalidCurrentPassword,
-    pydantic.Discriminator("result"),
-]
-
-
-class InitiateUserEmailChangeOutput_Pending(pydantic.BaseModel):
+class InitiateUserEmailChangeOutput_Pending(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -849,15 +820,7 @@ class InitiateUserEmailChangeOutput_Pending(pydantic.BaseModel):
     result: Literal["Pending"] = "Pending"
 
 
-class InitiateUserEmailChangeOutput_InvalidCurrentPassword(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    result: Literal["InvalidCurrentPassword"] = "InvalidCurrentPassword"
-
-
-class InitiateUserEmailChangeOutput_SameEmail(pydantic.BaseModel):
+class InitiateUserEmailChangeOutput_SameEmail(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -865,7 +828,7 @@ class InitiateUserEmailChangeOutput_SameEmail(pydantic.BaseModel):
     result: Literal["SameEmail"] = "SameEmail"
 
 
-class InitiateUserEmailChangeOutput_EmailAlreadyExists(pydantic.BaseModel):
+class InitiateUserEmailChangeOutput_EmailAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -876,14 +839,13 @@ class InitiateUserEmailChangeOutput_EmailAlreadyExists(pydantic.BaseModel):
 # Output of [`InitiateUserEmailChangeAction`].
 type InitiateUserEmailChangeOutput = Annotated[
     InitiateUserEmailChangeOutput_Pending
-    | InitiateUserEmailChangeOutput_InvalidCurrentPassword
     | InitiateUserEmailChangeOutput_SameEmail
     | InitiateUserEmailChangeOutput_EmailAlreadyExists,
     pydantic.Discriminator("result"),
 ]
 
 
-class CompleteUserEmailChangeOutput_Completed(pydantic.BaseModel):
+class CompleteUserEmailChangeOutput_Completed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -891,7 +853,7 @@ class CompleteUserEmailChangeOutput_Completed(pydantic.BaseModel):
     result: Literal["Completed"] = "Completed"
 
 
-class CompleteUserEmailChangeOutput_InvalidToken(pydantic.BaseModel):
+class CompleteUserEmailChangeOutput_InvalidToken(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -899,7 +861,7 @@ class CompleteUserEmailChangeOutput_InvalidToken(pydantic.BaseModel):
     result: Literal["InvalidToken"] = "InvalidToken"
 
 
-class CompleteUserEmailChangeOutput_EmailAlreadyExists(pydantic.BaseModel):
+class CompleteUserEmailChangeOutput_EmailAlreadyExists(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -916,7 +878,7 @@ type CompleteUserEmailChangeOutput = Annotated[
 ]
 
 
-class CompleteUserPasswordResetOutput_Completed(pydantic.BaseModel):
+class CompleteUserPasswordResetOutput_Completed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -924,7 +886,7 @@ class CompleteUserPasswordResetOutput_Completed(pydantic.BaseModel):
     result: Literal["Completed"] = "Completed"
 
 
-class CompleteUserPasswordResetOutput_InvalidToken(pydantic.BaseModel):
+class CompleteUserPasswordResetOutput_InvalidToken(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -940,109 +902,7 @@ type CompleteUserPasswordResetOutput = Annotated[
 ]
 
 
-class RegisterUserOutput_Created(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    result: Literal["Created"] = "Created"
-    status: UserRegistrationStatus = pydantic.Field(description="Registration status.")
-    message: str | None = pydantic.Field(
-        default=None, description="Optional message to show to the user."
-    )
-    created_at: _schema_datetime.Timestamp = pydantic.Field(
-        description="Timestamp when the registration was created.",
-        validation_alias="createdAt",
-        serialization_alias="createdAt",
-    )
-
-    def payload(self) -> "UserRegistration":
-        return UserRegistration(
-            status=self.status, message=self.message, created_at=self.created_at
-        )
-
-
-class RegisterUserOutput_Pending(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    result: Literal["Pending"] = "Pending"
-    status: UserRegistrationStatus = pydantic.Field(description="Registration status.")
-    message: str | None = pydantic.Field(
-        default=None, description="Optional message to show to the user."
-    )
-    created_at: _schema_datetime.Timestamp = pydantic.Field(
-        description="Timestamp when the registration was created.",
-        validation_alias="createdAt",
-        serialization_alias="createdAt",
-    )
-
-    def payload(self) -> "UserRegistration":
-        return UserRegistration(
-            status=self.status, message=self.message, created_at=self.created_at
-        )
-
-
-class RegisterUserOutput_EmailAlreadyExists(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    result: Literal["EmailAlreadyExists"] = "EmailAlreadyExists"
-
-
-# Output of registering a new user.
-type RegisterUserOutput = Annotated[
-    RegisterUserOutput_Created
-    | RegisterUserOutput_Pending
-    | RegisterUserOutput_EmailAlreadyExists,
-    pydantic.Discriminator("result"),
-]
-
-
-class UserRegistrationStatus_Pending(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    tag: Literal["Pending"] = "Pending"
-
-
-class UserRegistrationStatus_Waiting(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    tag: Literal["Waiting"] = "Waiting"
-
-
-class UserRegistrationStatus_Completed(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    tag: Literal["Completed"] = "Completed"
-
-
-class UserRegistrationStatus_Failed(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    tag: Literal["Failed"] = "Failed"
-
-
-type UserRegistrationStatus = Annotated[
-    UserRegistrationStatus_Pending
-    | UserRegistrationStatus_Waiting
-    | UserRegistrationStatus_Completed
-    | UserRegistrationStatus_Failed,
-    pydantic.Discriminator("tag"),
-]
-
-
-class CompleteRegistrationOutput_Completed(pydantic.BaseModel):
+class CompleteRegistrationOutput_Completed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1050,7 +910,7 @@ class CompleteRegistrationOutput_Completed(pydantic.BaseModel):
     result: Literal["Completed"] = "Completed"
 
 
-class CompleteRegistrationOutput_Failed(pydantic.BaseModel):
+class CompleteRegistrationOutput_Failed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )

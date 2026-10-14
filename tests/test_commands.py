@@ -114,7 +114,7 @@ def test_sync_invoke_device_command_end_to_end() -> None:
 
     with _sync_ws_server(handler) as base_url:
         logs: list[DeviceCommandDeviceFrame_Log] = []
-        with Client(base_url, token=_TOKEN) as client:
+        with Client(base_url, token=_TOKEN, dangerous_allow_plaintext=True) as client:
             done = client.invoke_device_command(
                 _DEVICE_ID,
                 "reboot",
@@ -129,7 +129,6 @@ def test_sync_invoke_device_command_end_to_end() -> None:
             "command": "reboot",
             "input": {"force": True},
             "streamLog": True,
-            "timeoutSecs": None,
         }
     ]
     assert [log.lines for log in logs] == [["starting"], ["working"]]
@@ -158,7 +157,7 @@ def test_sync_stream_device_command_yields_all_frames() -> None:
         )
 
     with _sync_ws_server(handler) as base_url:
-        with Client(base_url, token=_TOKEN) as client:
+        with Client(base_url, token=_TOKEN, dangerous_allow_plaintext=True) as client:
             with client.stream_device_command(_DEVICE_ID, "noop") as frames:
                 collected = list(frames)
 
@@ -175,7 +174,7 @@ def test_sync_invoke_raises_when_closed_before_done() -> None:
         ws.send(json.dumps({"type": "Log", "lines": ["partial"]}))
 
     with _sync_ws_server(handler) as base_url:
-        with Client(base_url, token=_TOKEN) as client:
+        with Client(base_url, token=_TOKEN, dangerous_allow_plaintext=True) as client:
             with pytest.raises(CommandInvocationError):
                 client.invoke_device_command(_DEVICE_ID, "noop")
 
@@ -208,7 +207,9 @@ async def test_async_invoke_device_command_end_to_end() -> None:
         async def on_log(frame: DeviceCommandDeviceFrame_Log) -> None:
             logs.append(frame)
 
-        async with AsyncClient(base_url, token=_TOKEN) as client:
+        async with AsyncClient(
+            base_url, token=_TOKEN, dangerous_allow_plaintext=True
+        ) as client:
             done = await client.invoke_device_command(
                 _DEVICE_ID,
                 "diagnose",
@@ -239,7 +240,9 @@ async def test_async_stream_device_command_yields_all_frames() -> None:
         )
 
     async with _async_ws_server(handler) as base_url:
-        async with AsyncClient(base_url, token=_TOKEN) as client:
+        async with AsyncClient(
+            base_url, token=_TOKEN, dangerous_allow_plaintext=True
+        ) as client:
             collected: list[object] = []
             async with client.stream_device_command(_DEVICE_ID, "noop") as frames:
                 async for frame in frames:

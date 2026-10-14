@@ -7,11 +7,14 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import actor as _schema_actor  # noqa: F401
     from . import datetime as _schema_datetime  # noqa: F401
     from . import jobs as _schema_jobs  # noqa: F401
     from . import json as _schema_json  # noqa: F401
+    from . import pagination as _schema_pagination  # noqa: F401
 
 
 class AuditLogActionId(str):
@@ -34,7 +37,7 @@ class AuditLogEventId(str):
         return handler(str)
 
 
-class AuditLogEvent(pydantic.BaseModel):
+class AuditLogEvent(_sidex.Model):
     """Event recorded in the audit log.
 
     Audit data is guaranteed to not contain any secret information."""
@@ -66,7 +69,7 @@ class AuditLogEvent(pydantic.BaseModel):
     )
 
 
-class AuditLogEventAction(pydantic.BaseModel):
+class AuditLogEventAction(_sidex.Model):
     """Action that caused an event."""
 
     model_config = pydantic.ConfigDict(
@@ -80,7 +83,7 @@ class AuditLogEventAction(pydantic.BaseModel):
     )
 
 
-class AuditLogEventJob(pydantic.BaseModel):
+class AuditLogEventJob(_sidex.Model):
     """Job that caused an event."""
 
     model_config = pydantic.ConfigDict(
@@ -94,7 +97,7 @@ class AuditLogEventJob(pydantic.BaseModel):
     )
 
 
-class AuditLogAction(pydantic.BaseModel):
+class AuditLogAction(_sidex.Model):
     """Action recorded in the audit log.
 
     Audit data is guaranteed to not contain any secret information."""
@@ -125,7 +128,7 @@ class AuditLogAction(pydantic.BaseModel):
     )
 
 
-class QueryAuditLogEventsAction(pydantic.BaseModel):
+class QueryAuditLogEventsAction(_sidex.Model):
     """Query the events recorded in the audit log.
 
     Requires administrator permissions."""
@@ -134,18 +137,26 @@ class QueryAuditLogEventsAction(pydantic.BaseModel):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
 
-class QueryAuditLogEventsOutput(pydantic.BaseModel):
+
+class QueryAuditLogEventsOutput(_sidex.Model):
     """Output of querying the events recorded in the audit log."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     events: list[AuditLogEvent] = pydantic.Field(description="List of audit events.")
 
 
-class QueryAuditLogActionsAction(pydantic.BaseModel):
+class QueryAuditLogActionsAction(_sidex.Model):
     """Query the actions recorded in the audit log.
 
     Requires administrator permissions."""
@@ -154,14 +165,22 @@ class QueryAuditLogActionsAction(pydantic.BaseModel):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
 
-class QueryAuditLogActionsOutput(pydantic.BaseModel):
+
+class QueryAuditLogActionsOutput(_sidex.Model):
     """Output of querying the actions recorded in the audit log."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     actions: list[AuditLogAction] = pydantic.Field(description="List of actions.")
 
 

@@ -7,6 +7,8 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
     from . import cluster as _schema_cluster  # noqa: F401
     from . import devices as _schema_devices  # noqa: F401
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
     from . import users as _schema_users  # noqa: F401
 
 
-class AnonymousActor(pydantic.BaseModel):
+class AnonymousActor(_sidex.Model):
     """Anonymous actor, typically used for unauthenticated actions."""
 
     model_config = pydantic.ConfigDict(
@@ -23,7 +25,7 @@ class AnonymousActor(pydantic.BaseModel):
     )
 
 
-class SystemActor(pydantic.BaseModel):
+class SystemActor(_sidex.Model):
     """System actor, typically used for internal actions."""
 
     model_config = pydantic.ConfigDict(
@@ -31,7 +33,7 @@ class SystemActor(pydantic.BaseModel):
     )
 
 
-class DeviceActor(pydantic.BaseModel):
+class DeviceActor(_sidex.Model):
     """Device authenticated via a specific deployment token."""
 
     model_config = pydantic.ConfigDict(
@@ -50,7 +52,7 @@ class DeviceActor(pydantic.BaseModel):
     )
 
 
-class UserActor(pydantic.BaseModel):
+class UserActor(_sidex.Model):
     """User authenticated via a user session."""
 
     model_config = pydantic.ConfigDict(
@@ -64,7 +66,7 @@ class UserActor(pydantic.BaseModel):
     )
 
 
-class UserTokenActor(pydantic.BaseModel):
+class UserTokenActor(_sidex.Model):
     """User authenticated via a specific token."""
 
     model_config = pydantic.ConfigDict(
@@ -83,7 +85,7 @@ class UserTokenActor(pydantic.BaseModel):
     )
 
 
-class ClusterNodeActor(pydantic.BaseModel):
+class ClusterNodeActor(_sidex.Model):
     """Cluster node."""
 
     model_config = pydantic.ConfigDict(
@@ -97,7 +99,7 @@ class ClusterNodeActor(pydantic.BaseModel):
     )
 
 
-class OrganizationApiTokenActor(pydantic.BaseModel):
+class OrganizationApiTokenActor(_sidex.Model):
     """Organization API token actor."""
 
     model_config = pydantic.ConfigDict(
@@ -116,7 +118,7 @@ class OrganizationApiTokenActor(pydantic.BaseModel):
     )
 
 
-class GetActorAction(pydantic.BaseModel):
+class GetActorAction(_sidex.Model):
     """Get the actor.
 
     This action is used to get the actor that is used to invoke the action."""
@@ -126,7 +128,7 @@ class GetActorAction(pydantic.BaseModel):
     )
 
 
-class GetActorOutput(pydantic.BaseModel):
+class GetActorOutput(_sidex.Model):
     """Output of getting the actor."""
 
     model_config = pydantic.ConfigDict(
@@ -136,7 +138,7 @@ class GetActorOutput(pydantic.BaseModel):
     actor: Actor = pydantic.Field(description="The actor.")
 
 
-class Actor_Anonymous(pydantic.BaseModel):
+class Actor_Anonymous(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -147,7 +149,7 @@ class Actor_Anonymous(pydantic.BaseModel):
         return AnonymousActor()
 
 
-class Actor_System(pydantic.BaseModel):
+class Actor_System(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -158,7 +160,7 @@ class Actor_System(pydantic.BaseModel):
         return SystemActor()
 
 
-class Actor_Device(pydantic.BaseModel):
+class Actor_Device(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -179,7 +181,7 @@ class Actor_Device(pydantic.BaseModel):
         return DeviceActor(device_id=self.device_id, token_id=self.token_id)
 
 
-class Actor_User(pydantic.BaseModel):
+class Actor_User(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -195,7 +197,7 @@ class Actor_User(pydantic.BaseModel):
         return UserActor(user_id=self.user_id)
 
 
-class Actor_UserToken(pydantic.BaseModel):
+class Actor_UserToken(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -216,7 +218,7 @@ class Actor_UserToken(pydantic.BaseModel):
         return UserTokenActor(user_id=self.user_id, token_id=self.token_id)
 
 
-class Actor_ClusterNode(pydantic.BaseModel):
+class Actor_ClusterNode(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -232,7 +234,7 @@ class Actor_ClusterNode(pydantic.BaseModel):
         return ClusterNodeActor(node_id=self.node_id)
 
 
-class Actor_OrganizationApiToken(pydantic.BaseModel):
+class Actor_OrganizationApiToken(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )

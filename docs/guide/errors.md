@@ -6,7 +6,7 @@ The SDK raises two exception types depending on where the error originates.
 
 [`ActionApiError`][nexigon_hub_sdk.ActionApiError] is raised when the Nexigon
 Hub API returns an error response (4xx or 5xx). It carries the structured error
-body and the HTTP status code:
+body, HTTP status code, and an optional retry delay:
 
 ```python
 from nexigon_hub_sdk import ActionApiError
@@ -18,7 +18,14 @@ except ActionApiError as exc:
     print(exc.status_code)   # e.g. 404
     print(exc.error.kind)    # error kind identifier
     print(exc.error.message) # human-readable message
+    if exc.retry_after_seconds is not None:
+        print(f"Retry after {exc.retry_after_seconds} seconds")
 ```
+
+The retry delay comes from the HTTP `Retry-After` header, with the structured
+error body's `retryAfterSeconds` field as a fallback. Hub uses it for rate-limit
+and temporary-capacity errors. The SDK exposes the metadata but does not retry
+actions automatically.
 
 ## Command transport errors
 
@@ -41,7 +48,7 @@ except CommandInvocationError as exc:
 
 ## Summary
 
-| Exception | When |
-|-----------|------|
-| [`ActionApiError`][nexigon_hub_sdk.ActionApiError] | API returned an error response |
+| Exception                                                          | When                                               |
+| ------------------------------------------------------------------ | -------------------------------------------------- |
+| [`ActionApiError`][nexigon_hub_sdk.ActionApiError]                 | API returned an error response                     |
 | [`CommandInvocationError`][nexigon_hub_sdk.CommandInvocationError] | WebSocket/protocol failure during a device command |

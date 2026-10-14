@@ -4,6 +4,7 @@ import pydantic
 
 from . import actor  # noqa: F401
 from . import audit  # noqa: F401
+from . import authorization  # noqa: F401
 from . import cluster  # noqa: F401
 from . import datetime  # noqa: F401
 from . import devices  # noqa: F401
@@ -16,6 +17,7 @@ from . import json  # noqa: F401
 from . import jwt  # noqa: F401
 from . import organizations  # noqa: F401
 from . import outputs  # noqa: F401
+from . import pagination  # noqa: F401
 from . import projects  # noqa: F401
 from . import properties  # noqa: F401
 from . import repositories  # noqa: F401
@@ -25,6 +27,7 @@ from . import vulnerabilities  # noqa: F401
 _schemas = {
     "actor": actor,
     "audit": audit,
+    "authorization": authorization,
     "cluster": cluster,
     "datetime": datetime,
     "devices": devices,
@@ -37,6 +40,7 @@ _schemas = {
     "jwt": jwt,
     "organizations": organizations,
     "outputs": outputs,
+    "pagination": pagination,
     "projects": projects,
     "properties": properties,
     "repositories": repositories,

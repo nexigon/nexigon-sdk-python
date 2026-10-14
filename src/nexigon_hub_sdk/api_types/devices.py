@@ -7,12 +7,17 @@ from typing import Annotated, Literal, TYPE_CHECKING, Union  # noqa: F401
 import pydantic  # noqa: F401
 import pydantic_core  # noqa: F401
 
+from . import _sidex  # noqa: F401
+
 if TYPE_CHECKING:
+    from . import actor as _schema_actor  # noqa: F401
     from . import audit as _schema_audit  # noqa: F401
     from . import cluster as _schema_cluster  # noqa: F401
     from . import datetime as _schema_datetime  # noqa: F401
+    from . import fleet as _schema_fleet  # noqa: F401
     from . import json as _schema_json  # noqa: F401
     from . import jwt as _schema_jwt  # noqa: F401
+    from . import pagination as _schema_pagination  # noqa: F401
     from . import projects as _schema_projects  # noqa: F401
     from . import properties as _schema_properties  # noqa: F401
 
@@ -87,7 +92,7 @@ class DeviceEventId(str):
         return handler(str)
 
 
-class QueryDevicesAction(pydantic.BaseModel):
+class QueryDevicesAction(_sidex.Model):
     """Query the devices of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -95,7 +100,7 @@ class QueryDevicesAction(pydantic.BaseModel):
     )
 
 
-class QueryDevicesOutput(pydantic.BaseModel):
+class QueryDevicesOutput(_sidex.Model):
     """Output of querying the devices of the instance."""
 
     model_config = pydantic.ConfigDict(
@@ -105,7 +110,7 @@ class QueryDevicesOutput(pydantic.BaseModel):
     devices: list[QueryDevicesItem] = pydantic.Field(description="List of devices.")
 
 
-class QueryDevicesItem(pydantic.BaseModel):
+class QueryDevicesItem(_sidex.Model):
     """Device item."""
 
     model_config = pydantic.ConfigDict(
@@ -122,7 +127,7 @@ class QueryDevicesItem(pydantic.BaseModel):
         validation_alias="projectId",
         serialization_alias="projectId",
     )
-    is_connected: bool = pydantic.Field(
+    is_connected: _sidex.Bool = pydantic.Field(
         description="Indicates whether the device is currently connected.",
         validation_alias="isConnected",
         serialization_alias="isConnected",
@@ -133,7 +138,7 @@ class QueryDevicesItem(pydantic.BaseModel):
         validation_alias="lastConnectedAt",
         serialization_alias="lastConnectedAt",
     )
-    current_connection_duration_secs: int | None = pydantic.Field(
+    current_connection_duration_secs: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Duration of the current connection in seconds (null if not connected).",
         validation_alias="currentConnectionDurationSecs",
@@ -141,7 +146,7 @@ class QueryDevicesItem(pydantic.BaseModel):
     )
 
 
-class GetDeviceDetailsAction(pydantic.BaseModel):
+class GetDeviceDetailsAction(_sidex.Model):
     """Get information about a device."""
 
     model_config = pydantic.ConfigDict(
@@ -155,13 +160,16 @@ class GetDeviceDetailsAction(pydantic.BaseModel):
     )
 
 
-class GetDeviceDetailsOutput(pydantic.BaseModel):
+class GetDeviceDetailsOutput(_sidex.Model):
     """Output of getting information about a device."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    groups: list[DeviceGroup] = pydantic.Field(
+        description="Groups currently assigned to this device."
+    )
     device_id: DeviceId = pydantic.Field(
         description="ID of the device.",
         validation_alias="deviceId",
@@ -178,7 +186,7 @@ class GetDeviceDetailsOutput(pydantic.BaseModel):
         serialization_alias="fingerprintId",
     )
     name: str | None = pydantic.Field(default=None, description="Name of the device.")
-    is_connected: bool = pydantic.Field(
+    is_connected: _sidex.Bool = pydantic.Field(
         description="Indicates whether the device is online.",
         validation_alias="isConnected",
         serialization_alias="isConnected",
@@ -191,7 +199,7 @@ class GetDeviceDetailsOutput(pydantic.BaseModel):
     )
 
 
-class DeviceCertificate(pydantic.BaseModel):
+class DeviceCertificate(_sidex.Model):
     """Device certificate."""
 
     model_config = pydantic.ConfigDict(
@@ -216,7 +224,7 @@ class DeviceCertificate(pydantic.BaseModel):
     )
 
 
-class DeviceConnection(pydantic.BaseModel):
+class DeviceConnection(_sidex.Model):
     """Device connection."""
 
     model_config = pydantic.ConfigDict(
@@ -238,14 +246,14 @@ class DeviceConnection(pydantic.BaseModel):
         validation_alias="connectedAt",
         serialization_alias="connectedAt",
     )
-    connected_for_secs: int = pydantic.Field(
+    connected_for_secs: _sidex.U32 = pydantic.Field(
         description="Duration of the connection in seconds.",
         validation_alias="connectedForSecs",
         serialization_alias="connectedForSecs",
     )
 
 
-class DeviceConnectionLog(pydantic.BaseModel):
+class DeviceConnectionLog(_sidex.Model):
     """Device connection log entry (for connection history)."""
 
     model_config = pydantic.ConfigDict(
@@ -279,14 +287,14 @@ class DeviceConnectionLog(pydantic.BaseModel):
         validation_alias="endReason",
         serialization_alias="endReason",
     )
-    duration_secs: int = pydantic.Field(
+    duration_secs: _sidex.U32 = pydantic.Field(
         description="Duration of the connection in seconds.",
         validation_alias="durationSecs",
         serialization_alias="durationSecs",
     )
 
 
-class CreateDeviceAction(pydantic.BaseModel):
+class CreateDeviceAction(_sidex.Model):
     """Create a new device."""
 
     model_config = pydantic.ConfigDict(
@@ -303,7 +311,7 @@ class CreateDeviceAction(pydantic.BaseModel):
     )
 
 
-class CreateDeviceOutput(pydantic.BaseModel):
+class CreateDeviceOutput(_sidex.Model):
     """Output of creating a new device."""
 
     model_config = pydantic.ConfigDict(
@@ -317,7 +325,7 @@ class CreateDeviceOutput(pydantic.BaseModel):
     )
 
 
-class DeleteDeviceAction(pydantic.BaseModel):
+class DeleteDeviceAction(_sidex.Model):
     """Delete a device."""
 
     model_config = pydantic.ConfigDict(
@@ -331,7 +339,7 @@ class DeleteDeviceAction(pydantic.BaseModel):
     )
 
 
-class SetDeviceNameAction(pydantic.BaseModel):
+class SetDeviceNameAction(_sidex.Model):
     """Set the name of a device."""
 
     model_config = pydantic.ConfigDict(
@@ -348,7 +356,7 @@ class SetDeviceNameAction(pydantic.BaseModel):
     )
 
 
-class IssueDeviceTokenAction(pydantic.BaseModel):
+class IssueDeviceTokenAction(_sidex.Model):
     """Issue a JWT for a device with user-defined claims.
 
     **Note: Only use this action for integration with external systems.**"""
@@ -362,7 +370,7 @@ class IssueDeviceTokenAction(pydantic.BaseModel):
         validation_alias="deviceId",
         serialization_alias="deviceId",
     )
-    valid_for_secs: int | None = pydantic.Field(
+    valid_for_secs: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Token validity duration in seconds.",
         validation_alias="validForSecs",
@@ -373,7 +381,7 @@ class IssueDeviceTokenAction(pydantic.BaseModel):
     )
 
 
-class IssueDeviceTokenOutput(pydantic.BaseModel):
+class IssueDeviceTokenOutput(_sidex.Model):
     """Output of issuing a JWT for a device."""
 
     model_config = pydantic.ConfigDict(
@@ -383,7 +391,7 @@ class IssueDeviceTokenOutput(pydantic.BaseModel):
     jwt: _schema_jwt.Jwt = pydantic.Field(description="Issued JWT.")
 
 
-class ValidateDeviceTokenAction(pydantic.BaseModel):
+class ValidateDeviceTokenAction(_sidex.Model):
     """Validate a device JWT.
 
     **Note: Only use this action for integration with external systems.**"""
@@ -395,7 +403,7 @@ class ValidateDeviceTokenAction(pydantic.BaseModel):
     jwt: _schema_jwt.Jwt = pydantic.Field(description="JWT to validate.")
 
 
-class ValidateDeviceTokenSuccess(pydantic.BaseModel):
+class ValidateDeviceTokenSuccess(_sidex.Model):
     """Successful validation of a device JWT."""
 
     model_config = pydantic.ConfigDict(
@@ -410,7 +418,7 @@ class ValidateDeviceTokenSuccess(pydantic.BaseModel):
     claims: _schema_json.JsonValue = pydantic.Field(description="User-defined claims.")
 
 
-class AddDeviceCertificateAction(pydantic.BaseModel):
+class AddDeviceCertificateAction(_sidex.Model):
     """Add a device certificate."""
 
     model_config = pydantic.ConfigDict(
@@ -431,7 +439,7 @@ class AddDeviceCertificateAction(pydantic.BaseModel):
     )
 
 
-class AddDeviceCertificateOutput(pydantic.BaseModel):
+class AddDeviceCertificateOutput(_sidex.Model):
     """Output of adding a device certificate."""
 
     model_config = pydantic.ConfigDict(
@@ -445,7 +453,7 @@ class AddDeviceCertificateOutput(pydantic.BaseModel):
     )
 
 
-class DeleteDeviceCertificateAction(pydantic.BaseModel):
+class DeleteDeviceCertificateAction(_sidex.Model):
     """Delete a device certificate."""
 
     model_config = pydantic.ConfigDict(
@@ -459,7 +467,7 @@ class DeleteDeviceCertificateAction(pydantic.BaseModel):
     )
 
 
-class SetDeviceCertificateStatusAction(pydantic.BaseModel):
+class SetDeviceCertificateStatusAction(_sidex.Model):
     """Set the status of a device certificate."""
 
     model_config = pydantic.ConfigDict(
@@ -476,7 +484,7 @@ class SetDeviceCertificateStatusAction(pydantic.BaseModel):
     )
 
 
-class RegisterDeviceConnectionAction(pydantic.BaseModel):
+class RegisterDeviceConnectionAction(_sidex.Model):
     """Register a connection of a device to a cluster node."""
 
     model_config = pydantic.ConfigDict(
@@ -500,7 +508,7 @@ class RegisterDeviceConnectionAction(pydantic.BaseModel):
     )
 
 
-class RegisterDeviceConnectionOutput(pydantic.BaseModel):
+class RegisterDeviceConnectionOutput(_sidex.Model):
     """Output of registering a connection of a device to a cluster node."""
 
     model_config = pydantic.ConfigDict(
@@ -514,7 +522,7 @@ class RegisterDeviceConnectionOutput(pydantic.BaseModel):
     )
 
 
-class UnregisterDeviceConnectionAction(pydantic.BaseModel):
+class UnregisterDeviceConnectionAction(_sidex.Model):
     """Unregister a connection of a device to a cluster node."""
 
     model_config = pydantic.ConfigDict(
@@ -533,7 +541,7 @@ class UnregisterDeviceConnectionAction(pydantic.BaseModel):
     )
 
 
-class QueryDeviceConnectionsAction(pydantic.BaseModel):
+class QueryDeviceConnectionsAction(_sidex.Model):
     """Query the connection history of a device."""
 
     model_config = pydantic.ConfigDict(
@@ -545,10 +553,10 @@ class QueryDeviceConnectionsAction(pydantic.BaseModel):
         validation_alias="deviceId",
         serialization_alias="deviceId",
     )
-    limit: int | None = pydantic.Field(
+    limit: _sidex.U32 | None = pydantic.Field(
         default=None, description="Limit results (default 100)."
     )
-    active_only: bool | None = pydantic.Field(
+    active_only: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Include only active connections.",
         validation_alias="activeOnly",
@@ -556,7 +564,7 @@ class QueryDeviceConnectionsAction(pydantic.BaseModel):
     )
 
 
-class QueryDeviceConnectionsOutput(pydantic.BaseModel):
+class QueryDeviceConnectionsOutput(_sidex.Model):
     """Output of querying device connections."""
 
     model_config = pydantic.ConfigDict(
@@ -568,7 +576,7 @@ class QueryDeviceConnectionsOutput(pydantic.BaseModel):
     )
 
 
-class IssueDeviceHttpProxyTokenAction(pydantic.BaseModel):
+class IssueDeviceHttpProxyTokenAction(_sidex.Model):
     """Issue a HTTP proxy JWT."""
 
     model_config = pydantic.ConfigDict(
@@ -580,7 +588,7 @@ class IssueDeviceHttpProxyTokenAction(pydantic.BaseModel):
         validation_alias="deviceId",
         serialization_alias="deviceId",
     )
-    valid_for_secs: int | None = pydantic.Field(
+    valid_for_secs: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Token validity duration in seconds.",
         validation_alias="validForSecs",
@@ -588,9 +596,9 @@ class IssueDeviceHttpProxyTokenAction(pydantic.BaseModel):
     )
     hostname: str | None = pydantic.Field(
         default=None,
-        description="Hostname to accept requests for.\n\nDefaults to a device-specific pseudo-random subdomain of the instance domain.",
+        description="Hostname to accept requests for.\n\nDefaults to a device-specific pseudo-random subdomain of the instance domain.\nA custom hostname requires a configured instance URL or legacy domain setting\nand must differ from the Nexigon Hub hostname.",
     )
-    port: int | None = pydantic.Field(
+    port: _sidex.U16 | None = pydantic.Field(
         default=None, description="Device port to proxy to.\n\nDefaults to `80`."
     )
     redirect: str | None = pydantic.Field(
@@ -599,7 +607,7 @@ class IssueDeviceHttpProxyTokenAction(pydantic.BaseModel):
     )
 
 
-class IssueDeviceHttpProxyTokenOutput(pydantic.BaseModel):
+class IssueDeviceHttpProxyTokenOutput(_sidex.Model):
     """Output of issuing a HTTP proxy JWT."""
 
     model_config = pydantic.ConfigDict(
@@ -610,7 +618,7 @@ class IssueDeviceHttpProxyTokenOutput(pydantic.BaseModel):
     url: str = pydantic.Field(description="Proxy URL.")
 
 
-class ValidateDeviceHttpProxyTokenAction(pydantic.BaseModel):
+class ValidateDeviceHttpProxyTokenAction(_sidex.Model):
     """Validate a HTTP proxy JWT."""
 
     model_config = pydantic.ConfigDict(
@@ -620,7 +628,7 @@ class ValidateDeviceHttpProxyTokenAction(pydantic.BaseModel):
     jwt: _schema_jwt.Jwt = pydantic.Field(description="JWT to validate.")
 
 
-class ValidateDeviceHttpProxyTokenInvalid(pydantic.BaseModel):
+class ValidateDeviceHttpProxyTokenInvalid(_sidex.Model):
     """Validation of a HTTP proxy JWT failed."""
 
     model_config = pydantic.ConfigDict(
@@ -632,7 +640,7 @@ class ValidateDeviceHttpProxyTokenInvalid(pydantic.BaseModel):
     )
 
 
-class ValidateDeviceHttpProxyTokenSuccess(pydantic.BaseModel):
+class ValidateDeviceHttpProxyTokenSuccess(_sidex.Model):
     """Successful validation of a HTTP proxy JWT."""
 
     model_config = pydantic.ConfigDict(
@@ -644,15 +652,19 @@ class ValidateDeviceHttpProxyTokenSuccess(pydantic.BaseModel):
         validation_alias="deviceId",
         serialization_alias="deviceId",
     )
+    issuer: _schema_actor.Actor | None = pydantic.Field(
+        default=None,
+        description="Actor that issued the token.\n\nMissing on proxy tokens issued before issuer tracking was introduced.",
+    )
     hostname: str | None = pydantic.Field(
         default=None, description="Hostname to accept requests for."
     )
-    port: int | None = pydantic.Field(
+    port: _sidex.U16 | None = pydantic.Field(
         default=None, description="Device port to proxy to."
     )
 
 
-class PublishDeviceEventsAction(pydantic.BaseModel):
+class PublishDeviceEventsAction(_sidex.Model):
     """Publish device events."""
 
     model_config = pydantic.ConfigDict(
@@ -667,35 +679,42 @@ class PublishDeviceEventsAction(pydantic.BaseModel):
     events: list[DeviceEvent] = pydantic.Field(description="Events to push.")
 
 
-class QueryDeviceEventsAction(pydantic.BaseModel):
+class QueryDeviceEventsAction(_sidex.Model):
     """Query device events."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
     device_id: DeviceId = pydantic.Field(
         description="ID of the device.",
         validation_alias="deviceId",
         serialization_alias="deviceId",
     )
-    limit: int | None = pydantic.Field(
+    limit: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Limit the number of events to return.\n\nDefault to `100`.",
     )
 
 
-class QueryDeviceEventsOutput(pydantic.BaseModel):
+class QueryDeviceEventsOutput(_sidex.Model):
     """Output of querying device events."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     events: list[DeviceEvent] = pydantic.Field(description="List of events.")
 
 
-class DeviceEvent(pydantic.BaseModel):
+class DeviceEvent(_sidex.Model):
     """Event emitted by a device."""
 
     model_config = pydantic.ConfigDict(
@@ -729,7 +748,7 @@ class DeviceEvent(pydantic.BaseModel):
     )
 
 
-class SetDevicePropertyAction(pydantic.BaseModel):
+class SetDevicePropertyAction(_sidex.Model):
     """Set a property of a device."""
 
     model_config = pydantic.ConfigDict(
@@ -743,10 +762,10 @@ class SetDevicePropertyAction(pydantic.BaseModel):
     )
     name: str = pydantic.Field(description="Name of the property.")
     value: _schema_json.JsonValue = pydantic.Field(description="Value of the property.")
-    protected: bool | None = pydantic.Field(
+    protected: _sidex.Bool | None = pydantic.Field(
         default=None, description="Indicates whether the property should be protected."
     )
-    expected_version: int | None = pydantic.Field(
+    expected_version: _sidex.U64 | None = pydantic.Field(
         default=None,
         description="If set, the property is only updated when its current version matches\nthis value (compare-and-swap). Returns `VersionConflict` when the\nversion does not match, or `Deleted` when the property no longer exists.",
         validation_alias="expectedVersion",
@@ -754,21 +773,21 @@ class SetDevicePropertyAction(pydantic.BaseModel):
     )
 
 
-class SetDevicePropertyVersionConflict(pydantic.BaseModel):
+class SetDevicePropertyVersionConflict(_sidex.Model):
     """Details of a version conflict when setting a device property."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    current_version: int = pydantic.Field(
+    current_version: _sidex.U64 = pydantic.Field(
         description="The current version of the property.",
         validation_alias="currentVersion",
         serialization_alias="currentVersion",
     )
 
 
-class GetDevicePropertyAction(pydantic.BaseModel):
+class GetDevicePropertyAction(_sidex.Model):
     """Get a property of a device."""
 
     model_config = pydantic.ConfigDict(
@@ -783,7 +802,7 @@ class GetDevicePropertyAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the property.")
 
 
-class RemoveDevicePropertyAction(pydantic.BaseModel):
+class RemoveDevicePropertyAction(_sidex.Model):
     """Remove a property from a device."""
 
     model_config = pydantic.ConfigDict(
@@ -798,7 +817,7 @@ class RemoveDevicePropertyAction(pydantic.BaseModel):
     name: str = pydantic.Field(description="Name of the property.")
 
 
-class QueryDevicePropertiesAction(pydantic.BaseModel):
+class QueryDevicePropertiesAction(_sidex.Model):
     """Query the properties of a device."""
 
     model_config = pydantic.ConfigDict(
@@ -812,7 +831,7 @@ class QueryDevicePropertiesAction(pydantic.BaseModel):
     )
 
 
-class QueryDevicePropertiesOutput(pydantic.BaseModel):
+class QueryDevicePropertiesOutput(_sidex.Model):
     """Output of querying the properties of a device."""
 
     model_config = pydantic.ConfigDict(
@@ -824,7 +843,7 @@ class QueryDevicePropertiesOutput(pydantic.BaseModel):
     )
 
 
-class DeviceProperty(pydantic.BaseModel):
+class DeviceProperty(_sidex.Model):
     """Device property."""
 
     model_config = pydantic.ConfigDict(
@@ -833,10 +852,10 @@ class DeviceProperty(pydantic.BaseModel):
 
     name: str = pydantic.Field(description="Name of the property.")
     value: _schema_json.JsonValue = pydantic.Field(description="Value of the property.")
-    protected: bool = pydantic.Field(
+    protected: _sidex.Bool = pydantic.Field(
         description="Indicates whether the property is protected."
     )
-    version: int = pydantic.Field(
+    version: _sidex.U64 = pydantic.Field(
         description="Incremental version number, incremented on each update."
     )
     last_updated: _schema_datetime.Timestamp = pydantic.Field(
@@ -846,13 +865,17 @@ class DeviceProperty(pydantic.BaseModel):
     )
 
 
-class QueryDeviceAuditLogAction(pydantic.BaseModel):
+class QueryDeviceAuditLogAction(_sidex.Model):
     """Query the audit log of a device."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Opt into cursor pagination. Without this field, the existing limit applies.",
+    )
     device_id: DeviceId = pydantic.Field(
         description="ID of the device.",
         validation_alias="deviceId",
@@ -860,19 +883,22 @@ class QueryDeviceAuditLogAction(pydantic.BaseModel):
     )
 
 
-class QueryDeviceAuditLogOutput(pydantic.BaseModel):
+class QueryDeviceAuditLogOutput(_sidex.Model):
     """Output of querying the audit log of a device."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
+    page: _schema_pagination.PageInfo | None = pydantic.Field(
+        default=None, description="Present when cursor pagination was requested."
+    )
     events: list[_schema_audit.AuditLogEvent] = pydantic.Field(
         description="List of audit log events."
     )
 
 
-class QueryDeviceCommandsAction(pydantic.BaseModel):
+class QueryDeviceCommandsAction(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Query the on-demand commands supported by a device."""
@@ -888,7 +914,7 @@ class QueryDeviceCommandsAction(pydantic.BaseModel):
     )
 
 
-class QueryDeviceCommandsOutput(pydantic.BaseModel):
+class QueryDeviceCommandsOutput(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Output of querying device commands."""
@@ -902,7 +928,7 @@ class QueryDeviceCommandsOutput(pydantic.BaseModel):
     )
 
 
-class DeviceCommandInvokeData(pydantic.BaseModel):
+class DeviceCommandInvokeData(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Command invocation parameters."""
@@ -913,13 +939,13 @@ class DeviceCommandInvokeData(pydantic.BaseModel):
 
     command: str = pydantic.Field(description="Command name.")
     input: _schema_json.JsonValue = pydantic.Field(description="Command input.")
-    stream_log: bool | None = pydantic.Field(
+    stream_log: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Stream log output back to the hub during execution (defaults to false).",
         validation_alias="streamLog",
         serialization_alias="streamLog",
     )
-    timeout_secs: int | None = pydantic.Field(
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Timeout in seconds.",
         validation_alias="timeoutSecs",
@@ -927,7 +953,7 @@ class DeviceCommandInvokeData(pydantic.BaseModel):
     )
 
 
-class DeviceCommandLogData(pydantic.BaseModel):
+class DeviceCommandLogData(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Log data."""
@@ -941,7 +967,7 @@ class DeviceCommandLogData(pydantic.BaseModel):
     )
 
 
-class DeviceCommandDoneData(pydantic.BaseModel):
+class DeviceCommandDoneData(_sidex.Model):
     """**Unstable (feature `device_commands`).**
 
     Command completion."""
@@ -962,10 +988,682 @@ class DeviceCommandDoneData(pydantic.BaseModel):
         validation_alias="logTail",
         serialization_alias="logTail",
     )
-    duration_ms: int = pydantic.Field(
+    duration_ms: _sidex.U64 = pydantic.Field(
         description="Execution duration in milliseconds.",
         validation_alias="durationMs",
         serialization_alias="durationMs",
+    )
+
+
+class DeviceGroupId(str):
+    """Stable identity of a group. Renaming does not change its identity."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
+    ) -> pydantic_core.CoreSchema:
+        return handler(str)
+
+
+# Opaque RGB background color in hexadecimal notation, such as `#3b82f6`.
+# Group text uses black or white, whichever has higher contrast.
+type DeviceGroupColor = str
+
+
+class DeviceGroup(_sidex.Model):
+    """A project-owned group that may be assigned to any number of its devices."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    group_id: DeviceGroupId = pydantic.Field(
+        validation_alias="groupId", serialization_alias="groupId"
+    )
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        validation_alias="projectId", serialization_alias="projectId"
+    )
+    name: str = pydantic.Field(
+        description="Unique within the project, ignoring case and surrounding whitespace."
+    )
+    color: DeviceGroupColor | None = pydantic.Field(default=None)
+    description: str | None = pydantic.Field(default=None)
+
+
+class QueryDeviceGroupsAction(_sidex.Model):
+    """List a project's group catalog, including groups without assignments."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        validation_alias="projectId", serialization_alias="projectId"
+    )
+
+
+class QueryDeviceGroupsOutput(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    groups: list[DeviceGroup]
+
+
+class CreateDeviceGroupAction(_sidex.Model):
+    """Create a group. Case-insensitive name collisions are rejected."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        validation_alias="projectId", serialization_alias="projectId"
+    )
+    name: str
+    color: DeviceGroupColor | None = pydantic.Field(default=None)
+    description: str | None = pydantic.Field(default=None)
+
+
+class UpdateDeviceGroupAction(_sidex.Model):
+    """Replace group metadata while retaining its identity and assignments."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        validation_alias="projectId", serialization_alias="projectId"
+    )
+    group_id: DeviceGroupId = pydantic.Field(
+        validation_alias="groupId", serialization_alias="groupId"
+    )
+    name: str
+    color: DeviceGroupColor | None = pydantic.Field(default=None)
+    description: str | None = pydantic.Field(default=None)
+
+
+class DeleteDeviceGroupAction(_sidex.Model):
+    """Delete a group and its assignments.
+
+    Existing operation selectors retain the group identity and continue evaluating
+    membership. A deleted group is absent from every device."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        validation_alias="projectId", serialization_alias="projectId"
+    )
+    group_id: DeviceGroupId = pydantic.Field(
+        validation_alias="groupId", serialization_alias="groupId"
+    )
+
+
+class UpdateDeviceGroupsAction(_sidex.Model):
+    """Atomically add and remove memberships on explicit devices in one project.
+
+    Adding an existing membership or removing an absent one is a no-op. A group
+    cannot appear in both lists. Unrelated memberships are preserved. All devices
+    and groups must belong to the project; otherwise no memberships change.
+    Device credentials cannot change groups. Removing a membership does not cancel
+    work that an operation has already assigned to the device."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        validation_alias="projectId", serialization_alias="projectId"
+    )
+    device_ids: list[DeviceId] = pydantic.Field(
+        validation_alias="deviceIds", serialization_alias="deviceIds"
+    )
+    add: list[DeviceGroupId]
+    remove: list[DeviceGroupId]
+
+
+class DeviceGroupSelector(_sidex.Model):
+    """Group membership conditions, combined with AND."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    all: list[DeviceGroupId] | None = pydantic.Field(
+        default=None,
+        description="Every listed group must be present. Empty or absent imposes no condition.",
+    )
+    any: list[DeviceGroupId] | None = pydantic.Field(
+        default=None,
+        description="At least one listed group must be present. Empty matches no devices;\nabsence imposes no condition.",
+    )
+    none: list[DeviceGroupId] | None = pydantic.Field(
+        default=None,
+        description="Every listed group must be absent. Empty or absent imposes no condition.",
+    )
+
+
+class DeviceSelectionError(_sidex.Model):
+    """A device whose property predicates could not be evaluated."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: DeviceId = pydantic.Field(
+        validation_alias="deviceId", serialization_alias="deviceId"
+    )
+    error: str
+
+
+class DeviceOperationId(str):
+    """Unique ID of a device operation."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
+    ) -> pydantic_core.CoreSchema:
+        return handler(str)
+
+
+class DeviceOperationWorkClaimId(str):
+    """Unique claim for one lease of a device operation work item."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: type, handler: pydantic.GetCoreSchemaHandler
+    ) -> pydantic_core.CoreSchema:
+        return handler(str)
+
+
+class DeviceOperationSetDevicePropertyStep(_sidex.Model):
+    """Server-side device property set."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    name: str = pydantic.Field(description="Property name.")
+    value: _schema_json.JsonValue = pydantic.Field(
+        description="Desired property value."
+    )
+    protected: _sidex.Bool | None = pydantic.Field(
+        default=None, description="Whether the property should be protected."
+    )
+
+
+class DeviceOperationUpdateDevicePropertyStep(_sidex.Model):
+    """Server-side device property update."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    name: str = pydantic.Field(description="Property name.")
+    mutation: _schema_json.JsonMutation = pydantic.Field(
+        description="Mutation to apply to the current property value."
+    )
+    protected: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Whether the property should be protected.\n\nWhen omitted, the existing protection flag is preserved. If the property\ndoes not exist yet, it defaults to unprotected.",
+    )
+
+
+class DeviceOperationRemoveDevicePropertyStep(_sidex.Model):
+    """Server-side device property removal."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    name: str = pydantic.Field(description="Property name.")
+
+
+class DeviceOperationDeviceCommandStep(_sidex.Model):
+    """Device-polled command step."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    command: str = pydantic.Field(
+        description="Command name from the device command manifest."
+    )
+    input: _schema_json.JsonValue = pydantic.Field(description="Command input.")
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Step deadline in seconds. Defaults to one hour.\n\nThe hub starts this clock when the command step becomes current work\nfor the device. The same value is also passed to the device command\nhandler as its execution timeout. If the device does not report before\nthe deadline, the operation driver marks the step and operation as timed out.\n\nThe deadline is *noticed* by a background driver tick rather than at the\ninstant it passes, so a step times out within one tick of its deadline, not\nexactly on it. Timeouts far shorter than the tick interval will therefore\novershoot considerably.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+
+class DeviceOperationDeviceTaskStep(_sidex.Model):
+    """Durable device task step.
+
+    The Hub exposes task polling, progress, checkpoint, and report semantics for custom
+    on-device clients. The bundled Nexigon agent requests command work only and has no
+    task executor, so without such a client this step remains running until its timeout."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    task: str = pydantic.Field(
+        description="Task name.\n\nA task is durable work scoped to this device operation step and intended for an\non-device worker. The bundled agent has no task executor; see\n[`DeviceOperationStep::DeviceTask`]."
+    )
+    input: _schema_json.JsonValue = pydantic.Field(description="Task input.")
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Step deadline in seconds. Defaults to one day.\n\nThe hub starts this clock when the task step becomes current work for\nthe device. If no terminal outcome is reported before the deadline,\nthe operation driver marks the step and operation as timed out. The deadline\nis noticed by a background driver tick rather than at the instant it passes,\nso a step times out within one tick of its deadline, not exactly on it. A restarted\nworker may resume from the latest checkpoint while the same step is\nstill current.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+
+class DeviceOperationWaitForDevicePropertyStep(_sidex.Model):
+    """Server-observed property wait step."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    predicate: _schema_json.JsonExpr = pydantic.Field(
+        description="Expression that must evaluate to JSON `true` to complete the wait.\n\nA missing named value or path keeps the step waiting because the device\nmay report it later. Any other evaluation error fails the step."
+    )
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Optional deadline in seconds.\n\nThe hub starts this clock when the wait step becomes current for the\ndevice. If the predicate does not match before the deadline,\nthe operation driver marks the step and operation as timed out.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+
+class DeviceOperationSummary(_sidex.Model):
+    """Summary of a device operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        description="ID of the operation.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        description="Project the device belongs to.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    device_id: DeviceId = pydantic.Field(
+        description="Device the operation is bound to.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    created_by: _schema_actor.Actor | None = pydantic.Field(
+        default=None,
+        description='Actor that created the operation.\n\nFor an operation created directly against a device, this is whoever created it. For\none belonging to a fleet operation, it is whoever created *that*, since the rollout\nis what caused the work to exist. Either way it answers "who is responsible for this\ndevice doing this", which is what a reader of a device\'s history wants to know.',
+        validation_alias="createdBy",
+        serialization_alias="createdBy",
+    )
+    fleet_operation_id: _schema_fleet.FleetOperationId | None = pydantic.Field(
+        default=None,
+        description="Fleet operation that materialized this operation, if any.\n\nAbsent for operations created directly against the device.",
+        validation_alias="fleetOperationId",
+        serialization_alias="fleetOperationId",
+    )
+    name: str = pydantic.Field(
+        description="Operation name.\n\nA standalone device operation owns this name. A fleet-owned device operation\ninherits it from its fleet operation."
+    )
+    description: str | None = pydantic.Field(
+        default=None, description="Optional description."
+    )
+    status: DeviceOperationStatus = pydantic.Field(description="Lifecycle status.")
+    step_index: _sidex.U32 = pydantic.Field(
+        description="Current step index.",
+        validation_alias="stepIndex",
+        serialization_alias="stepIndex",
+    )
+    step_count: _sidex.U32 = pydantic.Field(
+        description="Number of configured steps.",
+        validation_alias="stepCount",
+        serialization_alias="stepCount",
+    )
+    last_error: str | None = pydantic.Field(
+        default=None,
+        description="Last step or operation error.",
+        validation_alias="lastError",
+        serialization_alias="lastError",
+    )
+    created_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Creation time.",
+        validation_alias="createdAt",
+        serialization_alias="createdAt",
+    )
+    started_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Start time.",
+        validation_alias="startedAt",
+        serialization_alias="startedAt",
+    )
+    completed_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Completion time.",
+        validation_alias="completedAt",
+        serialization_alias="completedAt",
+    )
+    updated_at: _schema_datetime.Timestamp = pydantic.Field(
+        description="Last update time.",
+        validation_alias="updatedAt",
+        serialization_alias="updatedAt",
+    )
+
+
+class DeviceOperationDetails(_sidex.Model):
+    """Device operation details."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    summary: DeviceOperationSummary = pydantic.Field(description="Summary.")
+    steps: list[DeviceOperationStep] = pydantic.Field(description="Ordered steps.")
+    step_states: list[DeviceOperationStepState] = pydantic.Field(
+        description="State for steps that have started, one entry per step reached so far.\n\nA step with no entry here has not been reached yet. Correlate entries\nwith `steps` by `step_index`, not array position or length — this list\nisn't guaranteed to stay dense or gapless as a matter of API contract,\neven though the current driver happens to fill it in strictly in\norder.",
+        validation_alias="stepStates",
+        serialization_alias="stepStates",
+    )
+
+
+class DeviceOperationStepState(_sidex.Model):
+    """Persisted state for one device operation step.
+
+    Look up `DeviceOperationDetails.steps[step_index]` for the step's kind and
+    configuration; this only carries the step's execution state."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    step_index: _sidex.U32 = pydantic.Field(
+        description="Index into `DeviceOperationDetails.steps` of the step this state is for.",
+        validation_alias="stepIndex",
+        serialization_alias="stepIndex",
+    )
+    status: DeviceOperationStepStatus = pydantic.Field(
+        description="Step execution status."
+    )
+    output: _schema_json.JsonValue | None = pydantic.Field(
+        default=None, description="Step or device-reported command output."
+    )
+    error: str | None = pydantic.Field(
+        default=None, description="Error message when the step failed or timed out."
+    )
+    started_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="When the step started running.",
+        validation_alias="startedAt",
+        serialization_alias="startedAt",
+    )
+    completed_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="When the step reached a terminal status.",
+        validation_alias="completedAt",
+        serialization_alias="completedAt",
+    )
+    checkpoint: _schema_json.JsonValue | None = pydantic.Field(
+        default=None,
+        description="Durable checkpoint reported by the device while running a task step.\n\nOnly ever set for `DeviceTask` steps; always absent for every other\nstep kind, since only device tasks can report checkpoints (see\n`ReportDeviceOperationStepAction`).",
+    )
+
+
+class DeviceOperationWorkItem(_sidex.Model):
+    """Work item returned to a device when it polls."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        validation_alias="deviceOperationId", serialization_alias="deviceOperationId"
+    )
+    claim_id: DeviceOperationWorkClaimId = pydantic.Field(
+        description="Claim that must accompany reports for this delivery of the work.\n\nA later poll after the lease expires replaces this claim, fencing reports from\nthe older worker.",
+        validation_alias="claimId",
+        serialization_alias="claimId",
+    )
+    operation_name: str = pydantic.Field(
+        description="Name of the standalone or fleet operation that defined this work.",
+        validation_alias="operationName",
+        serialization_alias="operationName",
+    )
+    step_index: _sidex.U32 = pydantic.Field(
+        validation_alias="stepIndex", serialization_alias="stepIndex"
+    )
+    checkpoint: _schema_json.JsonValue | None = pydantic.Field(
+        default=None,
+        description="Durable checkpoint from a previous report for this step.",
+    )
+    step: DeviceOperationWorkStep
+
+
+class DeviceOperationStepReport(_sidex.Model):
+    """Report from a device after executing a polled step."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    status: DeviceOperationStepReportStatus = pydantic.Field(
+        description="Result status."
+    )
+    output: _schema_json.JsonValue | None = pydantic.Field(
+        default=None, description="Command or step output."
+    )
+    checkpoint: _schema_json.JsonValue | None = pydantic.Field(
+        default=None,
+        description="Durable checkpoint to return with future work polls for this step.",
+    )
+    error: str | None = pydantic.Field(
+        default=None, description="Error message when the step failed."
+    )
+
+
+class QueryDeviceOperationsAction(_sidex.Model):
+    """Query device operations for a device."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: DeviceId = pydantic.Field(
+        description="ID of the device.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+
+
+class QueryDeviceOperationsOutput(_sidex.Model):
+    """Output of querying device operations."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    operations: list[DeviceOperationSummary] = pydantic.Field(
+        description="Device operations."
+    )
+
+
+class GetDeviceOperationAction(_sidex.Model):
+    """Get device operation details."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        description="ID of the operation.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+
+
+class CreateDeviceOperationAction(_sidex.Model):
+    """Create a device operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: DeviceId = pydantic.Field(
+        description="Device the operation is bound to.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    name: str = pydantic.Field(description="Operation name.")
+    description: str | None = pydantic.Field(
+        default=None, description="Optional description."
+    )
+    steps: list[DeviceOperationStep] = pydantic.Field(description="Ordered steps.")
+
+
+class CreateDeviceOperationOutput(_sidex.Model):
+    """Output of creating a device operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        description="ID of the created operation.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+
+
+class StartDeviceOperationAction(_sidex.Model):
+    """Start a pending device operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        description="ID of the operation.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+
+
+class CancelDeviceOperationAction(_sidex.Model):
+    """Cancel a device operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        description="ID of the operation.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+
+
+class ClaimDeviceOperationWorkAction(_sidex.Model):
+    """Atomically claim device operation work for a device."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: DeviceId = pydantic.Field(
+        description="ID of the device claiming work.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    limit: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum number of work items to claim. Defaults to 1.",
+    )
+    kinds: list[DeviceOperationWorkKind] | None = pydantic.Field(
+        default=None,
+        description="Work kinds to return. Defaults to all device-executable work.",
+    )
+
+
+class ClaimDeviceOperationWorkOutput(_sidex.Model):
+    """Output of claiming operation work for a device."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    work: list[DeviceOperationWorkItem] = pydantic.Field(
+        description="Work items leased to the device."
+    )
+
+
+class ReportDeviceOperationStepAction(_sidex.Model):
+    """Report the result of a device operation step.
+
+    Repeating a report after it was already applied is a successful no-op. A report whose
+    claim has been superseded is also ignored, so an expired worker cannot overwrite the
+    current attempt."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    device_id: DeviceId = pydantic.Field(
+        description="ID of the reporting device.",
+        validation_alias="deviceId",
+        serialization_alias="deviceId",
+    )
+    device_operation_id: DeviceOperationId = pydantic.Field(
+        description="ID of the operation.",
+        validation_alias="deviceOperationId",
+        serialization_alias="deviceOperationId",
+    )
+    step_index: _sidex.U32 = pydantic.Field(
+        description="Step index being reported.",
+        validation_alias="stepIndex",
+        serialization_alias="stepIndex",
+    )
+    claim_id: DeviceOperationWorkClaimId = pydantic.Field(
+        description="Claim returned by the poll that delivered this work item.",
+        validation_alias="claimId",
+        serialization_alias="claimId",
+    )
+    report: DeviceOperationStepReport = pydantic.Field(
+        description="Reported step outcome."
     )
 
 
@@ -1049,7 +1747,7 @@ type ConnectionEndReason = (
 )
 
 
-class ValidateDeviceTokenOutput_Invalid(pydantic.BaseModel):
+class ValidateDeviceTokenOutput_Invalid(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1057,7 +1755,7 @@ class ValidateDeviceTokenOutput_Invalid(pydantic.BaseModel):
     result: Literal["Invalid"] = "Invalid"
 
 
-class ValidateDeviceTokenOutput_Valid(pydantic.BaseModel):
+class ValidateDeviceTokenOutput_Valid(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1081,7 +1779,7 @@ type ValidateDeviceTokenOutput = Annotated[
 ]
 
 
-class ValidateDeviceHttpProxyTokenOutput_Invalid(pydantic.BaseModel):
+class ValidateDeviceHttpProxyTokenOutput_Invalid(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1095,7 +1793,7 @@ class ValidateDeviceHttpProxyTokenOutput_Invalid(pydantic.BaseModel):
         return ValidateDeviceHttpProxyTokenInvalid(redirect=self.redirect)
 
 
-class ValidateDeviceHttpProxyTokenOutput_Valid(pydantic.BaseModel):
+class ValidateDeviceHttpProxyTokenOutput_Valid(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1106,16 +1804,23 @@ class ValidateDeviceHttpProxyTokenOutput_Valid(pydantic.BaseModel):
         validation_alias="deviceId",
         serialization_alias="deviceId",
     )
+    issuer: _schema_actor.Actor | None = pydantic.Field(
+        default=None,
+        description="Actor that issued the token.\n\nMissing on proxy tokens issued before issuer tracking was introduced.",
+    )
     hostname: str | None = pydantic.Field(
         default=None, description="Hostname to accept requests for."
     )
-    port: int | None = pydantic.Field(
+    port: _sidex.U16 | None = pydantic.Field(
         default=None, description="Device port to proxy to."
     )
 
     def payload(self) -> "ValidateDeviceHttpProxyTokenSuccess":
         return ValidateDeviceHttpProxyTokenSuccess(
-            device_id=self.device_id, hostname=self.hostname, port=self.port
+            device_id=self.device_id,
+            issuer=self.issuer,
+            hostname=self.hostname,
+            port=self.port,
         )
 
 
@@ -1162,7 +1867,7 @@ type DeviceEventSeverity = (
 )
 
 
-class SetDevicePropertyOutput_Set(pydantic.BaseModel):
+class SetDevicePropertyOutput_Set(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1170,13 +1875,13 @@ class SetDevicePropertyOutput_Set(pydantic.BaseModel):
     result: Literal["Set"] = "Set"
 
 
-class SetDevicePropertyOutput_VersionConflict(pydantic.BaseModel):
+class SetDevicePropertyOutput_VersionConflict(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
     result: Literal["VersionConflict"] = "VersionConflict"
-    current_version: int = pydantic.Field(
+    current_version: _sidex.U64 = pydantic.Field(
         description="The current version of the property.",
         validation_alias="currentVersion",
         serialization_alias="currentVersion",
@@ -1186,7 +1891,7 @@ class SetDevicePropertyOutput_VersionConflict(pydantic.BaseModel):
         return SetDevicePropertyVersionConflict(current_version=self.current_version)
 
 
-class SetDevicePropertyOutput_Deleted(pydantic.BaseModel):
+class SetDevicePropertyOutput_Deleted(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1203,7 +1908,7 @@ type SetDevicePropertyOutput = Annotated[
 ]
 
 
-class GetDevicePropertyOutput_NotFound(pydantic.BaseModel):
+class GetDevicePropertyOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1211,7 +1916,7 @@ class GetDevicePropertyOutput_NotFound(pydantic.BaseModel):
     result: Literal["NotFound"] = "NotFound"
 
 
-class GetDevicePropertyOutput_Found(pydantic.BaseModel):
+class GetDevicePropertyOutput_Found(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1219,10 +1924,10 @@ class GetDevicePropertyOutput_Found(pydantic.BaseModel):
     result: Literal["Found"] = "Found"
     name: str = pydantic.Field(description="Name of the property.")
     value: _schema_json.JsonValue = pydantic.Field(description="Value of the property.")
-    protected: bool = pydantic.Field(
+    protected: _sidex.Bool = pydantic.Field(
         description="Indicates whether the property is protected."
     )
-    version: int = pydantic.Field(
+    version: _sidex.U64 = pydantic.Field(
         description="Incremental version number, incremented on each update."
     )
     last_updated: _schema_datetime.Timestamp = pydantic.Field(
@@ -1248,7 +1953,7 @@ type GetDevicePropertyOutput = Annotated[
 ]
 
 
-class RemoveDevicePropertyOutput_NotFound(pydantic.BaseModel):
+class RemoveDevicePropertyOutput_NotFound(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1256,7 +1961,7 @@ class RemoveDevicePropertyOutput_NotFound(pydantic.BaseModel):
     result: Literal["NotFound"] = "NotFound"
 
 
-class RemoveDevicePropertyOutput_Removed(pydantic.BaseModel):
+class RemoveDevicePropertyOutput_Removed(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1285,7 +1990,7 @@ class DeviceCommandStatus_Error(pydantic.RootModel[Literal["Error"]]):
 type DeviceCommandStatus = DeviceCommandStatus_Ok | DeviceCommandStatus_Error
 
 
-class DeviceCommandHubFrame_Invoke(pydantic.BaseModel):
+class DeviceCommandHubFrame_Invoke(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1293,13 +1998,13 @@ class DeviceCommandHubFrame_Invoke(pydantic.BaseModel):
     type: Literal["Invoke"] = "Invoke"
     command: str = pydantic.Field(description="Command name.")
     input: _schema_json.JsonValue = pydantic.Field(description="Command input.")
-    stream_log: bool | None = pydantic.Field(
+    stream_log: _sidex.Bool | None = pydantic.Field(
         default=None,
         description="Stream log output back to the hub during execution (defaults to false).",
         validation_alias="streamLog",
         serialization_alias="streamLog",
     )
-    timeout_secs: int | None = pydantic.Field(
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
         default=None,
         description="Timeout in seconds.",
         validation_alias="timeoutSecs",
@@ -1321,7 +2026,7 @@ class DeviceCommandHubFrame_Invoke(pydantic.BaseModel):
 type DeviceCommandHubFrame = DeviceCommandHubFrame_Invoke
 
 
-class DeviceCommandDeviceFrame_Log(pydantic.BaseModel):
+class DeviceCommandDeviceFrame_Log(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1335,7 +2040,7 @@ class DeviceCommandDeviceFrame_Log(pydantic.BaseModel):
         return DeviceCommandLogData(lines=self.lines)
 
 
-class DeviceCommandDeviceFrame_Done(pydantic.BaseModel):
+class DeviceCommandDeviceFrame_Done(_sidex.Model):
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
@@ -1353,7 +2058,7 @@ class DeviceCommandDeviceFrame_Done(pydantic.BaseModel):
         validation_alias="logTail",
         serialization_alias="logTail",
     )
-    duration_ms: int = pydantic.Field(
+    duration_ms: _sidex.U64 = pydantic.Field(
         description="Execution duration in milliseconds.",
         validation_alias="durationMs",
         serialization_alias="durationMs",
@@ -1375,4 +2080,380 @@ class DeviceCommandDeviceFrame_Done(pydantic.BaseModel):
 type DeviceCommandDeviceFrame = Annotated[
     DeviceCommandDeviceFrame_Log | DeviceCommandDeviceFrame_Done,
     pydantic.Discriminator("type"),
+]
+
+
+class DeviceOperationStep_SetDeviceProperty(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["SetDeviceProperty"] = "SetDeviceProperty"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    name: str = pydantic.Field(description="Property name.")
+    value: _schema_json.JsonValue = pydantic.Field(
+        description="Desired property value."
+    )
+    protected: _sidex.Bool | None = pydantic.Field(
+        default=None, description="Whether the property should be protected."
+    )
+
+    def payload(self) -> "DeviceOperationSetDevicePropertyStep":
+        return DeviceOperationSetDevicePropertyStep(
+            when=self.when, name=self.name, value=self.value, protected=self.protected
+        )
+
+
+class DeviceOperationStep_UpdateDeviceProperty(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["UpdateDeviceProperty"] = "UpdateDeviceProperty"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    name: str = pydantic.Field(description="Property name.")
+    mutation: _schema_json.JsonMutation = pydantic.Field(
+        description="Mutation to apply to the current property value."
+    )
+    protected: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Whether the property should be protected.\n\nWhen omitted, the existing protection flag is preserved. If the property\ndoes not exist yet, it defaults to unprotected.",
+    )
+
+    def payload(self) -> "DeviceOperationUpdateDevicePropertyStep":
+        return DeviceOperationUpdateDevicePropertyStep(
+            when=self.when,
+            name=self.name,
+            mutation=self.mutation,
+            protected=self.protected,
+        )
+
+
+class DeviceOperationStep_RemoveDeviceProperty(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["RemoveDeviceProperty"] = "RemoveDeviceProperty"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    name: str = pydantic.Field(description="Property name.")
+
+    def payload(self) -> "DeviceOperationRemoveDevicePropertyStep":
+        return DeviceOperationRemoveDevicePropertyStep(when=self.when, name=self.name)
+
+
+class DeviceOperationStep_DeviceCommand(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["DeviceCommand"] = "DeviceCommand"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    command: str = pydantic.Field(
+        description="Command name from the device command manifest."
+    )
+    input: _schema_json.JsonValue = pydantic.Field(description="Command input.")
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Step deadline in seconds. Defaults to one hour.\n\nThe hub starts this clock when the command step becomes current work\nfor the device. The same value is also passed to the device command\nhandler as its execution timeout. If the device does not report before\nthe deadline, the operation driver marks the step and operation as timed out.\n\nThe deadline is *noticed* by a background driver tick rather than at the\ninstant it passes, so a step times out within one tick of its deadline, not\nexactly on it. Timeouts far shorter than the tick interval will therefore\novershoot considerably.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+    def payload(self) -> "DeviceOperationDeviceCommandStep":
+        return DeviceOperationDeviceCommandStep(
+            when=self.when,
+            command=self.command,
+            input=self.input,
+            timeout_secs=self.timeout_secs,
+        )
+
+
+class DeviceOperationStep_DeviceTask(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["DeviceTask"] = "DeviceTask"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    task: str = pydantic.Field(
+        description="Task name.\n\nA task is durable work scoped to this device operation step and intended for an\non-device worker. The bundled agent has no task executor; see\n[`DeviceOperationStep::DeviceTask`]."
+    )
+    input: _schema_json.JsonValue = pydantic.Field(description="Task input.")
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Step deadline in seconds. Defaults to one day.\n\nThe hub starts this clock when the task step becomes current work for\nthe device. If no terminal outcome is reported before the deadline,\nthe operation driver marks the step and operation as timed out. The deadline\nis noticed by a background driver tick rather than at the instant it passes,\nso a step times out within one tick of its deadline, not exactly on it. A restarted\nworker may resume from the latest checkpoint while the same step is\nstill current.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+    def payload(self) -> "DeviceOperationDeviceTaskStep":
+        return DeviceOperationDeviceTaskStep(
+            when=self.when,
+            task=self.task,
+            input=self.input,
+            timeout_secs=self.timeout_secs,
+        )
+
+
+class DeviceOperationStep_WaitForDeviceProperty(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["WaitForDeviceProperty"] = "WaitForDeviceProperty"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    predicate: _schema_json.JsonExpr = pydantic.Field(
+        description="Expression that must evaluate to JSON `true` to complete the wait.\n\nA missing named value or path keeps the step waiting because the device\nmay report it later. Any other evaluation error fails the step."
+    )
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Optional deadline in seconds.\n\nThe hub starts this clock when the wait step becomes current for the\ndevice. If the predicate does not match before the deadline,\nthe operation driver marks the step and operation as timed out.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+    def payload(self) -> "DeviceOperationWaitForDevicePropertyStep":
+        return DeviceOperationWaitForDevicePropertyStep(
+            when=self.when, predicate=self.predicate, timeout_secs=self.timeout_secs
+        )
+
+
+# One step in a device operation.
+type DeviceOperationStep = Annotated[
+    DeviceOperationStep_SetDeviceProperty
+    | DeviceOperationStep_UpdateDeviceProperty
+    | DeviceOperationStep_RemoveDeviceProperty
+    | DeviceOperationStep_DeviceCommand
+    | DeviceOperationStep_DeviceTask
+    | DeviceOperationStep_WaitForDeviceProperty,
+    pydantic.Discriminator("kind"),
+]
+
+
+class DeviceOperationStatus_Pending(pydantic.RootModel[Literal["Pending"]]):
+    pass
+
+
+class DeviceOperationStatus_Running(pydantic.RootModel[Literal["Running"]]):
+    pass
+
+
+class DeviceOperationStatus_Succeeded(pydantic.RootModel[Literal["Succeeded"]]):
+    pass
+
+
+class DeviceOperationStatus_Failed(pydantic.RootModel[Literal["Failed"]]):
+    pass
+
+
+class DeviceOperationStatus_TimedOut(pydantic.RootModel[Literal["TimedOut"]]):
+    pass
+
+
+class DeviceOperationStatus_Cancelled(pydantic.RootModel[Literal["Cancelled"]]):
+    pass
+
+
+# Device operation lifecycle status.
+type DeviceOperationStatus = (
+    DeviceOperationStatus_Pending
+    | DeviceOperationStatus_Running
+    | DeviceOperationStatus_Succeeded
+    | DeviceOperationStatus_Failed
+    | DeviceOperationStatus_TimedOut
+    | DeviceOperationStatus_Cancelled
+)
+
+
+class DeviceOperationStepStatus_Pending(pydantic.RootModel[Literal["Pending"]]):
+    pass
+
+
+class DeviceOperationStepStatus_Running(pydantic.RootModel[Literal["Running"]]):
+    pass
+
+
+class DeviceOperationStepStatus_Succeeded(pydantic.RootModel[Literal["Succeeded"]]):
+    pass
+
+
+class DeviceOperationStepStatus_Failed(pydantic.RootModel[Literal["Failed"]]):
+    pass
+
+
+class DeviceOperationStepStatus_TimedOut(pydantic.RootModel[Literal["TimedOut"]]):
+    pass
+
+
+class DeviceOperationStepStatus_Skipped(pydantic.RootModel[Literal["Skipped"]]):
+    pass
+
+
+# Step execution status.
+type DeviceOperationStepStatus = (
+    DeviceOperationStepStatus_Pending
+    | DeviceOperationStepStatus_Running
+    | DeviceOperationStepStatus_Succeeded
+    | DeviceOperationStepStatus_Failed
+    | DeviceOperationStepStatus_TimedOut
+    | DeviceOperationStepStatus_Skipped
+)
+
+
+class DeviceOperationWorkStep_DeviceCommand(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["DeviceCommand"] = "DeviceCommand"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    command: str = pydantic.Field(
+        description="Command name from the device command manifest."
+    )
+    input: _schema_json.JsonValue = pydantic.Field(description="Command input.")
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Step deadline in seconds. Defaults to one hour.\n\nThe hub starts this clock when the command step becomes current work\nfor the device. The same value is also passed to the device command\nhandler as its execution timeout. If the device does not report before\nthe deadline, the operation driver marks the step and operation as timed out.\n\nThe deadline is *noticed* by a background driver tick rather than at the\ninstant it passes, so a step times out within one tick of its deadline, not\nexactly on it. Timeouts far shorter than the tick interval will therefore\novershoot considerably.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+    def payload(self) -> "DeviceOperationDeviceCommandStep":
+        return DeviceOperationDeviceCommandStep(
+            when=self.when,
+            command=self.command,
+            input=self.input,
+            timeout_secs=self.timeout_secs,
+        )
+
+
+class DeviceOperationWorkStep_DeviceTask(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    kind: Literal["DeviceTask"] = "DeviceTask"
+    when: _schema_json.JsonExpr | None = pydantic.Field(
+        default=None,
+        description="Run the step only when this expression evaluates to JSON `true`.\nA false result skips the step; an evaluation error fails it.",
+    )
+    task: str = pydantic.Field(
+        description="Task name.\n\nA task is durable work scoped to this device operation step and intended for an\non-device worker. The bundled agent has no task executor; see\n[`DeviceOperationStep::DeviceTask`]."
+    )
+    input: _schema_json.JsonValue = pydantic.Field(description="Task input.")
+    timeout_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Step deadline in seconds. Defaults to one day.\n\nThe hub starts this clock when the task step becomes current work for\nthe device. If no terminal outcome is reported before the deadline,\nthe operation driver marks the step and operation as timed out. The deadline\nis noticed by a background driver tick rather than at the instant it passes,\nso a step times out within one tick of its deadline, not exactly on it. A restarted\nworker may resume from the latest checkpoint while the same step is\nstill current.",
+        validation_alias="timeoutSecs",
+        serialization_alias="timeoutSecs",
+    )
+
+    def payload(self) -> "DeviceOperationDeviceTaskStep":
+        return DeviceOperationDeviceTaskStep(
+            when=self.when,
+            task=self.task,
+            input=self.input,
+            timeout_secs=self.timeout_secs,
+        )
+
+
+# Device-executable operation step.
+type DeviceOperationWorkStep = Annotated[
+    DeviceOperationWorkStep_DeviceCommand | DeviceOperationWorkStep_DeviceTask,
+    pydantic.Discriminator("kind"),
+]
+
+
+class DeviceOperationWorkKind_DeviceCommand(
+    pydantic.RootModel[Literal["DeviceCommand"]]
+):
+    pass
+
+
+class DeviceOperationWorkKind_DeviceTask(pydantic.RootModel[Literal["DeviceTask"]]):
+    pass
+
+
+# Kind of device operation work to return from a poll.
+type DeviceOperationWorkKind = (
+    DeviceOperationWorkKind_DeviceCommand | DeviceOperationWorkKind_DeviceTask
+)
+
+
+class DeviceOperationStepReportStatus_Running(pydantic.RootModel[Literal["Running"]]):
+    pass
+
+
+class DeviceOperationStepReportStatus_Succeeded(
+    pydantic.RootModel[Literal["Succeeded"]]
+):
+    pass
+
+
+class DeviceOperationStepReportStatus_Failed(pydantic.RootModel[Literal["Failed"]]):
+    pass
+
+
+# Device-reported step result status.
+type DeviceOperationStepReportStatus = (
+    DeviceOperationStepReportStatus_Running
+    | DeviceOperationStepReportStatus_Succeeded
+    | DeviceOperationStepReportStatus_Failed
+)
+
+
+class GetDeviceOperationOutput_NotFound(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["NotFound"] = "NotFound"
+
+
+class GetDeviceOperationOutput_Found(_sidex.Model):
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    result: Literal["Found"] = "Found"
+    summary: DeviceOperationSummary = pydantic.Field(description="Summary.")
+    steps: list[DeviceOperationStep] = pydantic.Field(description="Ordered steps.")
+    step_states: list[DeviceOperationStepState] = pydantic.Field(
+        description="State for steps that have started, one entry per step reached so far.\n\nA step with no entry here has not been reached yet. Correlate entries\nwith `steps` by `step_index`, not array position or length — this list\nisn't guaranteed to stay dense or gapless as a matter of API contract,\neven though the current driver happens to fill it in strictly in\norder.",
+        validation_alias="stepStates",
+        serialization_alias="stepStates",
+    )
+
+    def payload(self) -> "DeviceOperationDetails":
+        return DeviceOperationDetails(
+            summary=self.summary, steps=self.steps, step_states=self.step_states
+        )
+
+
+# Output of getting device operation details.
+type GetDeviceOperationOutput = Annotated[
+    GetDeviceOperationOutput_NotFound | GetDeviceOperationOutput_Found,
+    pydantic.Discriminator("result"),
 ]
