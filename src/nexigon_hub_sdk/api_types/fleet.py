@@ -574,6 +574,58 @@ class CreateFleetOperationOutput(_sidex.Model):
     )
 
 
+class PreviewFleetOperationTargetsAction(_sidex.Model):
+    """Preview the devices a target selector currently matches.
+
+    Evaluates the selector against the current state of every device in the
+    project. A preview does not freeze membership; operations resolve their
+    targets when they enroll devices."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: _schema_projects.ProjectId = pydantic.Field(
+        description="Project to evaluate the selector against.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    selector: FleetOperationTargetSelector = pydantic.Field(
+        description="Target selector."
+    )
+    limit: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum number of devices and errors to return. Defaults to `20`.",
+    )
+
+
+class PreviewFleetOperationTargetsOutput(_sidex.Model):
+    """Output of previewing fleet operation targets."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    matching_count: _sidex.U32 = pydantic.Field(
+        description="Number of matching devices.",
+        validation_alias="matchingCount",
+        serialization_alias="matchingCount",
+    )
+    devices: list[_schema_projects.QueryProjectDevicesItem] = pydantic.Field(
+        description="Newest matching devices, up to the requested limit."
+    )
+    error_count: _sidex.U32 = pydantic.Field(
+        description="Number of devices whose property predicates failed evaluation.",
+        validation_alias="errorCount",
+        serialization_alias="errorCount",
+    )
+    selection_errors: list[_schema_devices.DeviceSelectionError] = pydantic.Field(
+        description="Devices whose property predicates failed evaluation, up to the requested\nlimit.",
+        validation_alias="selectionErrors",
+        serialization_alias="selectionErrors",
+    )
+
+
 class StartFleetOperationAction(_sidex.Model):
     """Start a draft fleet operation."""
 

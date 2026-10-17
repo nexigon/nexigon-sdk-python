@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from . import audit as _schema_audit  # noqa: F401
     from . import datetime as _schema_datetime  # noqa: F401
     from . import devices as _schema_devices  # noqa: F401
-    from . import fleet as _schema_fleet  # noqa: F401
     from . import json as _schema_json  # noqa: F401
     from . import organizations as _schema_organizations  # noqa: F401
     from . import pagination as _schema_pagination  # noqa: F401
@@ -269,19 +268,23 @@ class RemovePropertySchemaAction(_sidex.Model):
 
 
 class QueryProjectDevicesAction(_sidex.Model):
-    """Query the devices of a project."""
+    """Query a page of the devices of a project, newest first."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    selector: _schema_fleet.FleetOperationTargetSelector | None = pydantic.Field(
-        default=None, description="Shared filter, also accepted by fleet operations."
-    )
     project_id: ProjectId = pydantic.Field(
         description="ID of the project.",
         validation_alias="projectId",
         serialization_alias="projectId",
+    )
+    filter: _schema_devices.DeviceFilter | None = pydantic.Field(
+        default=None, description="Only return devices matching this filter."
+    )
+    page: _schema_pagination.PageRequest | None = pydantic.Field(
+        default=None,
+        description="Page to return. Without this field, the first page is returned.",
     )
 
 
@@ -292,13 +295,42 @@ class QueryProjectDevicesOutput(_sidex.Model):
         populate_by_name=True, serialize_by_alias=True, defer_build=True
     )
 
-    selection_errors: list[_schema_devices.DeviceSelectionError] = pydantic.Field(
-        description="Devices whose property predicates failed evaluation.",
-        validation_alias="selectionErrors",
-        serialization_alias="selectionErrors",
-    )
     devices: list[QueryProjectDevicesItem] = pydantic.Field(
-        description="List of devices."
+        description="Devices on this page."
+    )
+    page: _schema_pagination.PageInfo = pydantic.Field(
+        description="Continuation of the traversal."
+    )
+
+
+class CountProjectDevicesAction(_sidex.Model):
+    """Count the devices of a project."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    project_id: ProjectId = pydantic.Field(
+        description="ID of the project.",
+        validation_alias="projectId",
+        serialization_alias="projectId",
+    )
+    filter: _schema_devices.DeviceFilter | None = pydantic.Field(
+        default=None,
+        description="Only count devices matching this filter in `matching`.",
+    )
+
+
+class CountProjectDevicesOutput(_sidex.Model):
+    """Output of counting the devices of a project."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    total: _sidex.U32 = pydantic.Field(description="Number of devices in the project.")
+    matching: _sidex.U32 = pydantic.Field(
+        description="Number of devices matching the filter."
     )
 
 
