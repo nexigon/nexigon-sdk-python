@@ -10,7 +10,9 @@ import pydantic_core  # noqa: F401
 from . import _sidex  # noqa: F401
 
 if TYPE_CHECKING:
+    from . import datetime as _schema_datetime  # noqa: F401
     from . import json as _schema_json  # noqa: F401
+    from . import repositories as _schema_repositories  # noqa: F401
 
 
 class SystemInfo(_sidex.Model):
@@ -100,59 +102,15 @@ class DiskInfo(_sidex.Model):
     )
 
 
-class OtaUpdateStatus(_sidex.Model):
-    """**Unstable (feature `ota_updates`).**
-
-    OTA update status (`dev.nexigon.ota.status`).
-
-    Published by the device agent to report the effective OTA configuration
-    and the current state of the update process."""
-
-    model_config = pydantic.ConfigDict(
-        populate_by_name=True, serialize_by_alias=True, defer_build=True
-    )
-
-    config: OtaUpdateConfig | None = pydantic.Field(
-        default=None,
-        description="Effective OTA configuration (TOML defaults merged with device overrides).",
-    )
-    current_version: str | None = pydantic.Field(
-        default=None,
-        description="Currently installed version (matches a repository version tag).",
-        validation_alias="currentVersion",
-        serialization_alias="currentVersion",
-    )
-    state: OtaUpdateState | None = pydantic.Field(
-        default=None, description="Current state of the update process."
-    )
-    target_version: str | None = pydantic.Field(
-        default=None,
-        description="Target version being installed, if an update is in progress.",
-        validation_alias="targetVersion",
-        serialization_alias="targetVersion",
-    )
-    failure_count: _sidex.U32 | None = pydantic.Field(
-        default=None,
-        description="Number of consecutive failed update attempts for the current target.\nReset to zero when the config changes or an update succeeds.",
-        validation_alias="failureCount",
-        serialization_alias="failureCount",
-    )
-    last_error: str | None = pydantic.Field(
-        default=None,
-        description="Error message from the last failed attempt, if any.",
-        validation_alias="lastError",
-        serialization_alias="lastError",
-    )
-
-
 class OtaUpdateConfig(_sidex.Model):
     """**Unstable (feature `ota_updates`).**
 
-    OTA update configuration identifying the update source.
+    OTA update configuration (`dev.nexigon.ota.config`).
 
-    Used as the shape of `/etc/nexigon-rugix-ota.json` and the
-    `dev.nexigon.ota.config` device property. The device property is
-    merged on top of the file-based defaults."""
+    Desired state of a device. Integrations apply the property to defaults
+    built into the image as a JSON merge patch (RFC 7396): objects merge
+    recursively, `null` removes a default, and any other value, including an
+    array, replaces the default."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -160,7 +118,308 @@ class OtaUpdateConfig(_sidex.Model):
 
     path: str | None = pydantic.Field(
         default=None,
-        description="Repository path prefix for locating update artifacts.",
+        description="Version path in the format `<repository>/<package>/<version>`.\n\n`<version>` is a tag or a version ID. A tag tracks the version the tag\npoints to. A version ID pins a single version.",
+    )
+    hold: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Hold the device at its current version.\n\nWhile set, the device starts no new update. An update in progress\ncompletes, including its activation. Defaults to false.",
+    )
+    window: OtaUpdateWindow | None = pydantic.Field(
+        default=None,
+        description="Maintenance window restricting when updates are activated.\n\nUpdates can be activated at any time when absent.",
+    )
+    retry: OtaUpdateRetryPolicy | None = pydantic.Field(
+        default=None, description="Retry policy for failed update attempts."
+    )
+    spread: OtaUpdateSpread | None = pydantic.Field(
+        default=None,
+        description="Spreading of updates across devices.\n\nDevices update without waiting when absent.",
+    )
+
+
+class OtaUpdateWindow(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Maintenance window in the device's local time.
+
+    The window restricts activation, the step that interrupts the device's
+    operation, such as the reboot into the new version. Integrations may
+    download and install an update outside the window if doing so does not
+    interrupt operation."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    ranges: list[OtaUpdateWindowRange] = pydantic.Field(
+        description="Time ranges in which updates can be activated.\n\nAn empty list never allows activation."
+    )
+
+
+class OtaUpdateWindowRange(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Recurring time range of a maintenance window."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    days: list[Weekday] | None = pydantic.Field(
+        default=None,
+        description="Days on which the range starts.\n\nDefaults to every day.",
+    )
+    start: TimeOfDay = pydantic.Field(description="Start of the range (inclusive).")
+    end: TimeOfDay = pydantic.Field(
+        description="End of the range (exclusive).\n\nAn end at or before the start lies on the following day. A range whose\nend equals its start therefore spans 24 hours."
+    )
+
+
+# **Unstable (feature `ota_updates`).**
+#
+# Time of day in the format `HH:MM` (24-hour clock).
+type TimeOfDay = str
+
+
+class OtaUpdateSpread(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Spreading of updates across devices.
+
+    Each device derives its position `u` from the SHA-256 hash of
+    `<device-id>/<target-version-id>`: the first 8 bytes, read as a big-endian
+    unsigned integer `n`, give `u = floor(n / 2^11) / 2^53`, which a
+    double-precision number represents exactly. A device may start updating to the
+    target once both of the following hold:
+
+    - With `duration_secs`, its turn has begun at
+    `start + floor(duration_secs * sqrt(u))`. The share of eligible devices
+    thus grows quadratically from 0 at the start to 1 after `duration_secs`.
+    - With `percentage`, its position is below `percentage / 100`."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    duration_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Time over which updates are spread, in seconds.",
+        validation_alias="durationSecs",
+        serialization_alias="durationSecs",
+    )
+    start_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Start of the spread over time.\n\nDefaults to the time at which the tag in the configured path was assigned\nto its current version. Without an explicit start, updates to versions\nconfigured by version ID are not spread over time.",
+        validation_alias="startAt",
+        serialization_alias="startAt",
+    )
+    percentage: _sidex.F64 | None = pydantic.Field(
+        default=None,
+        description="Share of devices that may update, in percent.\n\nRaising the percentage only adds devices. Without `duration_secs`, it\nreleases the update to the given share right away. With `duration_secs`,\nit caps the share of the spread over time.",
+    )
+
+
+class OtaUpdateRetryPolicy(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Retry policy for failed update attempts.
+
+    An attempt starts when the device begins downloading a version. Failures
+    before that, such as an unreachable Nexigon Hub, do not count as attempts.
+    The delay between attempts starts at `initial_delay_secs` and doubles after
+    each failed attempt, up to `max_delay_secs`."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    max_attempts: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum number of failed attempts for a version.\n\nUnlimited when absent.",
+        validation_alias="maxAttempts",
+        serialization_alias="maxAttempts",
+    )
+    initial_delay_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Delay before the first retry in seconds.",
+        validation_alias="initialDelaySecs",
+        serialization_alias="initialDelaySecs",
+    )
+    max_delay_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Maximum delay between attempts in seconds.",
+        validation_alias="maxDelaySecs",
+        serialization_alias="maxDelaySecs",
+    )
+    cooldown_secs: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Time in seconds after reaching `max_attempts` before the failure count\nresets and a new round of attempts begins.\n\nWithout a cooldown, the device stops attempting the version until the\nconfiguration is written again.",
+        validation_alias="cooldownSecs",
+        serialization_alias="cooldownSecs",
+    )
+
+
+class OtaUpdateStatus(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    OTA update status (`dev.nexigon.ota.status`).
+
+    Actual state of a device, published by its update integration."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    capabilities: list[OtaUpdateCapability] | None = pydantic.Field(
+        default=None,
+        description="Optional features of the OTA update contract that the integration supports.",
+    )
+    config: OtaUpdateConfig | None = pydantic.Field(
+        default=None,
+        description="Effective configuration, including the defaults the integration applies.",
+    )
+    config_version: _sidex.U64 | None = pydantic.Field(
+        default=None,
+        description="Version of the `dev.nexigon.ota.config` property that the integration\nlast read.\n\nAbsent when the property does not exist. Every write to the property,\neven with an unchanged value, increments its version.",
+        validation_alias="configVersion",
+        serialization_alias="configVersion",
+    )
+    current_version: str | None = pydantic.Field(
+        default=None,
+        description="Version string of the running system, as built into the image.\n\nBy convention, a locked tag of the corresponding package version.",
+        validation_alias="currentVersion",
+        serialization_alias="currentVersion",
+    )
+    current_version_id: _schema_repositories.PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Package version of the running system.\n\nResolved by looking up `current_version` as a tag in the configured package.\nAbsent when the tag does not resolve.",
+        validation_alias="currentVersionId",
+        serialization_alias="currentVersionId",
+    )
+    state: OtaUpdateState | None = pydantic.Field(
+        default=None, description="Current state of the update process."
+    )
+    blocked: OtaUpdateBlocked | None = pydantic.Field(
+        default=None,
+        description="Why the update is blocked. Present when `state` is `blocked`.",
+    )
+    target_version: str | None = pydantic.Field(
+        default=None,
+        description="Version string of the target version, as built into its image.",
+        validation_alias="targetVersion",
+        serialization_alias="targetVersion",
+    )
+    target_version_id: _schema_repositories.PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Package version that the configured path resolves to.",
+        validation_alias="targetVersionId",
+        serialization_alias="targetVersionId",
+    )
+    next_version_id: _schema_repositories.PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Package version that the device installs next.\n\nDiffers from `target_version_id` when the device must install a\ncheckpoint before the target.",
+        validation_alias="nextVersionId",
+        serialization_alias="nextVersionId",
+    )
+    failure_count: _sidex.U32 | None = pydantic.Field(
+        default=None,
+        description="Number of consecutive failed attempts for the next version.\n\nResets to zero when the next version or `config_version` changes, when\nthe retry cooldown ends, or when an update succeeds.",
+        validation_alias="failureCount",
+        serialization_alias="failureCount",
+    )
+    last_error: str | None = pydantic.Field(
+        default=None,
+        description="Error message of the last failure, if any.",
+        validation_alias="lastError",
+        serialization_alias="lastError",
+    )
+    next_attempt_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Earliest time of the next attempt.\n\nSet while the device waits for a spread, a maintenance window, a retry\ndelay, or a retry cooldown. Absent when the time of the next attempt is\nunknown or no further attempt is scheduled.",
+        validation_alias="nextAttemptAt",
+        serialization_alias="nextAttemptAt",
+    )
+    updater: OtaUpdater | None = pydantic.Field(
+        default=None, description="Update system that installs versions on the device."
+    )
+
+
+class OtaUpdater(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Update system that installs versions on a device, such as Rugix Ctrl or RAUC.
+
+    Slot names, states, and health values are those of the update system."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    name: str = pydantic.Field(
+        description="Name of the update system, such as `rugix` or `rauc`."
+    )
+    version: str | None = pydantic.Field(
+        default=None, description="Version of the update system."
+    )
+    booted_slot: str | None = pydantic.Field(
+        default=None,
+        description="Slot that the running system booted from.",
+        validation_alias="bootedSlot",
+        serialization_alias="bootedSlot",
+    )
+    primary_slot: str | None = pydantic.Field(
+        default=None,
+        description="Slot that the device boots from next.\n\nDiffers from `booted_slot` when the device runs a version on trial or\nhas installed a version that it has not booted yet.",
+        validation_alias="primarySlot",
+        serialization_alias="primarySlot",
+    )
+    awaiting_commit: _sidex.Bool | None = pydantic.Field(
+        default=None,
+        description="Whether the running system awaits its commit.",
+        validation_alias="awaitingCommit",
+        serialization_alias="awaitingCommit",
+    )
+    slots: list[OtaUpdaterSlot] | None = pydantic.Field(
+        default=None, description="Slots that the update system installs versions into."
+    )
+
+
+class OtaUpdaterSlot(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Slot of an update system."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    name: str = pydantic.Field(description="Name of the slot.")
+    state: str | None = pydantic.Field(
+        default=None, description="State of the slot, such as `booted` or `inactive`."
+    )
+    health: str | None = pydantic.Field(
+        default=None, description="Health of the slot, such as `good` or `bad`."
+    )
+    version: str | None = pydantic.Field(
+        default=None,
+        description="Version installed in the slot, if the update system records it.",
+    )
+
+
+class OtaUpdateBlocked(_sidex.Model):
+    """**Unstable (feature `ota_updates`).**
+
+    Information about a blocked update."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    code: str = pydantic.Field(
+        description="Machine-readable reason in kebab case.\n\nNexigon defines these codes:\n\n- `hold`: The configuration holds the device at its current version.\n- `spread`: The device waits for its turn in a spread or is outside the\nreleased percentage.\n- `window`: The device waits for its maintenance window.\n- `no-update-path`: The target is unreachable without going back across\na checkpoint.\n- `unknown-current-version`: The target has a base version, but\n`current_version` does not resolve to a package version.\n\nIntegrations may define their own codes for conditions specific to the\ndevice, such as `awaiting-approval`."
+    )
+    message: str | None = pydantic.Field(
+        default=None, description="Human-readable explanation."
     )
 
 
@@ -417,6 +676,80 @@ class DeviceCommandDescriptor(_sidex.Model):
     )
 
 
+class Weekday_Monday(pydantic.RootModel[Literal["monday"]]):
+    pass
+
+
+class Weekday_Tuesday(pydantic.RootModel[Literal["tuesday"]]):
+    pass
+
+
+class Weekday_Wednesday(pydantic.RootModel[Literal["wednesday"]]):
+    pass
+
+
+class Weekday_Thursday(pydantic.RootModel[Literal["thursday"]]):
+    pass
+
+
+class Weekday_Friday(pydantic.RootModel[Literal["friday"]]):
+    pass
+
+
+class Weekday_Saturday(pydantic.RootModel[Literal["saturday"]]):
+    pass
+
+
+class Weekday_Sunday(pydantic.RootModel[Literal["sunday"]]):
+    pass
+
+
+# **Unstable (feature `ota_updates`).**
+#
+# Day of the week.
+type Weekday = (
+    Weekday_Monday
+    | Weekday_Tuesday
+    | Weekday_Wednesday
+    | Weekday_Thursday
+    | Weekday_Friday
+    | Weekday_Saturday
+    | Weekday_Sunday
+)
+
+
+class OtaUpdateCapability_Window(pydantic.RootModel[Literal["window"]]):
+    pass
+
+
+class OtaUpdateCapability_Retry(pydantic.RootModel[Literal["retry"]]):
+    pass
+
+
+class OtaUpdateCapability_Checkpoints(pydantic.RootModel[Literal["checkpoints"]]):
+    pass
+
+
+class OtaUpdateCapability_Spread(pydantic.RootModel[Literal["spread"]]):
+    pass
+
+
+class OtaUpdateCapability_Hold(pydantic.RootModel[Literal["hold"]]):
+    pass
+
+
+# **Unstable (feature `ota_updates`).**
+#
+# Optional feature of the OTA update contract.
+type OtaUpdateCapability = (
+    OtaUpdateCapability_Window
+    | OtaUpdateCapability_Retry
+    | OtaUpdateCapability_Checkpoints
+    | OtaUpdateCapability_Spread
+    | OtaUpdateCapability_Hold
+)
+
+
 class OtaUpdateState_Idle(pydantic.RootModel[Literal["idle"]]):
     pass
 
@@ -454,10 +787,8 @@ class OtaUpdateState_Rollback(pydantic.RootModel[Literal["rollback"]]):
 # OTA update state.
 #
 # The resting states are `idle`, `completed`, `failed`, and `blocked`.
-# The agent remains in one of these until the next check cycle begins
-# or the blocking condition clears. `idle` means no update has been
-# attempted yet; `completed` and `failed` retain the outcome of the
-# last cycle; `blocked` indicates an update is available but deferred.
+# The integration remains in one of these until the next check begins or
+# the blocking condition clears.
 type OtaUpdateState = (
     OtaUpdateState_Idle
     | OtaUpdateState_Installing

@@ -1124,6 +1124,25 @@ class UpdateDeviceGroupsAction(_sidex.Model):
     remove: list[DeviceGroupId]
 
 
+class DeviceFilter(_sidex.Model):
+    """Device list filter. All supplied conditions must hold."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    search: str | None = pydantic.Field(
+        default=None,
+        description="Case-insensitive substring of device name, hostname, or ID.",
+    )
+    status: DeviceStatus | None = pydantic.Field(
+        default=None, description="Current combined health and connection status."
+    )
+    groups: DeviceGroupSelector | None = pydantic.Field(
+        default=None, description="Group membership conditions."
+    )
+
+
 class DeviceGroupSelector(_sidex.Model):
     """Group membership conditions, combined with AND."""
 

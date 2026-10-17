@@ -43,15 +43,33 @@ based on the action you pass in.
 
 ## Listing resources
 
-Many actions follow a query/list pattern and return a wrapper with a list field:
+Many actions follow a query/list pattern and return a wrapper with a list field.
+Device listings return one page at a time, by default the 100 devices most
+recently first seen. To list every device, pass `output.page.next_cursor` back
+as `pagination.PageRequest(cursor=...)` until it is `None`:
 
 ```python
-from nexigon_hub_sdk.api_types import projects
+from nexigon_hub_sdk.api_types import pagination, projects
 
-output = client.execute(projects.QueryProjectDevicesAction(project_id="p_..."))
-for device in output.devices:
-    print(f"{device.device_id}: connected={device.is_connected}")
+cursor = None
+while True:
+    output = client.execute(
+        projects.QueryProjectDevicesAction(
+            project_id="p_...", page=pagination.PageRequest(cursor=cursor)
+        )
+    )
+    for device in output.devices:
+        print(f"{device.device_id}: connected={device.is_connected}")
+    cursor = output.page.next_cursor
+    if cursor is None:
+        break
 ```
+
+Device events and audit logs paginate the same way once you pass
+`page=pagination.PageRequest()`. Without it, they return their unpaginated
+result and `output.page` is `None`. See
+[Pagination](https://docs.nexigon.dev/reference/actions-api#pagination) for
+page sizes, ordering, and consistency.
 
 ## Working with device properties
 
