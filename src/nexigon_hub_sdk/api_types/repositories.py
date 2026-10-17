@@ -1019,6 +1019,12 @@ class QueryPackageVersionsItem(_sidex.Model):
     tags: list[PackageVersionTag] = pydantic.Field(
         description="Tags of the package version."
     )
+    base_version_id: PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Version that a device must run before installing this version.",
+        validation_alias="baseVersionId",
+        serialization_alias="baseVersionId",
+    )
 
 
 class PackageVersionTag(_sidex.Model):
@@ -1031,6 +1037,12 @@ class PackageVersionTag(_sidex.Model):
     tag: str = pydantic.Field(description="Tag of the package version.")
     locked: _sidex.Bool = pydantic.Field(
         description="Indicates whether the tag is locked."
+    )
+    assigned_at: _schema_datetime.Timestamp | None = pydantic.Field(
+        default=None,
+        description="Time at which the tag was assigned to the version. Absent on older Hub versions.",
+        validation_alias="assignedAt",
+        serialization_alias="assignedAt",
     )
 
 
@@ -1179,6 +1191,12 @@ class GetPackageVersionDetailsOutput(_sidex.Model):
         default=None,
         description="Sealed versions reject content changes and all deletion. Absent on older Hub versions.",
     )
+    base_version_id: PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Version that a device must run before installing this version.",
+        validation_alias="baseVersionId",
+        serialization_alias="baseVersionId",
+    )
 
 
 class CreatePackageVersionAction(_sidex.Model):
@@ -1208,6 +1226,12 @@ class CreatePackageVersionAction(_sidex.Model):
     metadata: dict[str, _schema_json.JsonValue] | None = pydantic.Field(
         default=None, description="Optional initial metadata."
     )
+    base_version_id: PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="Version that a device must run before installing this version.\n\nMust belong to the same package and must not be scheduled for deletion.",
+        validation_alias="baseVersionId",
+        serialization_alias="baseVersionId",
+    )
 
 
 class CreatePackageVersionSuccess(_sidex.Model):
@@ -1225,7 +1249,9 @@ class CreatePackageVersionSuccess(_sidex.Model):
 
 
 class DeletePackageVersionAction(_sidex.Model):
-    """Delete a package version."""
+    """Delete a package version.
+
+    A version that is the base of another version cannot be deleted."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -1241,7 +1267,8 @@ class DeletePackageVersionAction(_sidex.Model):
 class SetPackageVersionDeletionScheduleAction(_sidex.Model):
     """Schedule or cancel automatic deletion. Requires permission to manage versions.
     Deletion removes the version and all tags, including locked tags. It does not
-    check device installations. Unused assets follow the repository cleanup policy."""
+    check device installations. Unused assets follow the repository cleanup policy.
+    A version that is the base of another version cannot be scheduled."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -1272,6 +1299,30 @@ class SetPackageVersionNameAction(_sidex.Model):
     )
     name: str | None = pydantic.Field(
         default=None, description="New name of the package version."
+    )
+
+
+class SetPackageVersionBaseAction(_sidex.Model):
+    """Set or clear the base of a package version. Requires permission to manage versions.
+
+    The base must belong to the same package, must not be scheduled for deletion, and
+    must not lead back to the version through its own bases. Sealed versions reject
+    changes to their base."""
+
+    model_config = pydantic.ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, defer_build=True
+    )
+
+    version_id: PackageVersionId = pydantic.Field(
+        description="ID of the package version.",
+        validation_alias="versionId",
+        serialization_alias="versionId",
+    )
+    base_version_id: PackageVersionId | None = pydantic.Field(
+        default=None,
+        description="New base version. Omit to clear the base.",
+        validation_alias="baseVersionId",
+        serialization_alias="baseVersionId",
     )
 
 
@@ -1670,7 +1721,8 @@ class DeleteRepositoryS3ConfigAction(_sidex.Model):
 
 class PackageVersionRetention(_sidex.Model):
     """Opt-in retention of unsealed versions, evaluated per package by creation time.
-    Either exceeded limit makes a version eligible for deletion, including existing versions."""
+    Either exceeded limit makes a version eligible for deletion, including existing versions.
+    Retention skips versions that are the base of another version."""
 
     model_config = pydantic.ConfigDict(
         populate_by_name=True, serialize_by_alias=True, defer_build=True
@@ -1707,7 +1759,8 @@ class SetPackageVersionRetentionAction(_sidex.Model):
 class SealPackageVersionAction(_sidex.Model):
     """Permanently seal a version. Requires permission to manage versions.
     Sealing cancels scheduled deletion and blocks changes to the name, metadata,
-    and attachments, as well as deletion of the version, package, or repository.
+    base version, and attachments, as well as deletion of the version, package,
+    or repository.
     Tags remain editable. Sealing cannot be reversed."""
 
     model_config = pydantic.ConfigDict(

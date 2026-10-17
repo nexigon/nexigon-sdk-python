@@ -207,6 +207,10 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "projects_QueryDevices",
         pydantic.TypeAdapter(projects.QueryProjectDevicesOutput),
     ),
+    projects.CountProjectDevicesAction: (
+        "projects_CountDevices",
+        pydantic.TypeAdapter(projects.CountProjectDevicesOutput),
+    ),
     projects.QueryProjectDeploymentTokensAction: (
         "projects_QueryDeploymentTokens",
         pydantic.TypeAdapter(projects.QueryProjectDeploymentTokensOutput),
@@ -404,6 +408,10 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
         "fleet_CreateOperation",
         pydantic.TypeAdapter(fleet.CreateFleetOperationOutput),
     ),
+    fleet.PreviewFleetOperationTargetsAction: (
+        "fleet_PreviewOperationTargets",
+        pydantic.TypeAdapter(fleet.PreviewFleetOperationTargetsOutput),
+    ),
     fleet.StartFleetOperationAction: (
         "fleet_StartOperation",
         pydantic.TypeAdapter(outputs.Empty),
@@ -582,6 +590,10 @@ _ACTION_REGISTRY: dict[type, tuple[str, pydantic.TypeAdapter]] = {  # type: igno
     ),
     repositories.SetPackageVersionNameAction: (
         "repositories_SetVersionName",
+        pydantic.TypeAdapter(outputs.Empty),
+    ),
+    repositories.SetPackageVersionBaseAction: (
+        "repositories_SetVersionBase",
         pydantic.TypeAdapter(outputs.Empty),
     ),
     repositories.SetPackageVersionMetadataAction: (
@@ -1031,7 +1043,14 @@ class _SyncExecuteMixin:
     def execute(
         self, action: projects.QueryProjectDevicesAction
     ) -> projects.QueryProjectDevicesOutput:
-        """Query the devices of a project."""
+        """Query a page of the devices of a project, newest first."""
+        ...
+
+    @overload
+    def execute(
+        self, action: projects.CountProjectDevicesAction
+    ) -> projects.CountProjectDevicesOutput:
+        """Count the devices of a project."""
         ...
 
     @overload
@@ -1374,6 +1393,17 @@ class _SyncExecuteMixin:
         ...
 
     @overload
+    def execute(
+        self, action: fleet.PreviewFleetOperationTargetsAction
+    ) -> fleet.PreviewFleetOperationTargetsOutput:
+        """Preview the devices a target selector currently matches.
+
+        Evaluates the selector against the current state of every device in the
+        project. A preview does not freeze membership; operations resolve their
+        targets when they enroll devices."""
+        ...
+
+    @overload
     def execute(self, action: fleet.StartFleetOperationAction) -> outputs.Empty:
         """Start a draft fleet operation."""
         ...
@@ -1667,14 +1697,17 @@ class _SyncExecuteMixin:
 
     @overload
     def execute(self, action: repositories.DeletePackageVersionAction) -> outputs.Empty:
-        """Delete a package version."""
+        """Delete a package version.
+
+        A version that is the base of another version cannot be deleted."""
         ...
 
     @overload
     def execute(self, action: repositories.SealPackageVersionAction) -> outputs.Empty:
         """Permanently seal a version. Requires permission to manage versions.
         Sealing cancels scheduled deletion and blocks changes to the name, metadata,
-        and attachments, as well as deletion of the version, package, or repository.
+        base version, and attachments, as well as deletion of the version, package,
+        or repository.
         Tags remain editable. Sealing cannot be reversed."""
         ...
 
@@ -1691,7 +1724,8 @@ class _SyncExecuteMixin:
     ) -> outputs.Empty:
         """Schedule or cancel automatic deletion. Requires permission to manage versions.
         Deletion removes the version and all tags, including locked tags. It does not
-        check device installations. Unused assets follow the repository cleanup policy."""
+        check device installations. Unused assets follow the repository cleanup policy.
+        A version that is the base of another version cannot be scheduled."""
         ...
 
     @overload
@@ -1699,6 +1733,17 @@ class _SyncExecuteMixin:
         self, action: repositories.SetPackageVersionNameAction
     ) -> outputs.Empty:
         """Set the name of a package version."""
+        ...
+
+    @overload
+    def execute(
+        self, action: repositories.SetPackageVersionBaseAction
+    ) -> outputs.Empty:
+        """Set or clear the base of a package version. Requires permission to manage versions.
+
+        The base must belong to the same package, must not be scheduled for deletion, and
+        must not lead back to the version through its own bases. Sealed versions reject
+        changes to their base."""
         ...
 
     @overload
@@ -2275,7 +2320,14 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: projects.QueryProjectDevicesAction
     ) -> projects.QueryProjectDevicesOutput:
-        """Query the devices of a project."""
+        """Query a page of the devices of a project, newest first."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: projects.CountProjectDevicesAction
+    ) -> projects.CountProjectDevicesOutput:
+        """Count the devices of a project."""
         ...
 
     @overload
@@ -2640,6 +2692,17 @@ class _AsyncExecuteMixin:
         ...
 
     @overload
+    async def execute(
+        self, action: fleet.PreviewFleetOperationTargetsAction
+    ) -> fleet.PreviewFleetOperationTargetsOutput:
+        """Preview the devices a target selector currently matches.
+
+        Evaluates the selector against the current state of every device in the
+        project. A preview does not freeze membership; operations resolve their
+        targets when they enroll devices."""
+        ...
+
+    @overload
     async def execute(self, action: fleet.StartFleetOperationAction) -> outputs.Empty:
         """Start a draft fleet operation."""
         ...
@@ -2947,7 +3010,9 @@ class _AsyncExecuteMixin:
     async def execute(
         self, action: repositories.DeletePackageVersionAction
     ) -> outputs.Empty:
-        """Delete a package version."""
+        """Delete a package version.
+
+        A version that is the base of another version cannot be deleted."""
         ...
 
     @overload
@@ -2956,7 +3021,8 @@ class _AsyncExecuteMixin:
     ) -> outputs.Empty:
         """Permanently seal a version. Requires permission to manage versions.
         Sealing cancels scheduled deletion and blocks changes to the name, metadata,
-        and attachments, as well as deletion of the version, package, or repository.
+        base version, and attachments, as well as deletion of the version, package,
+        or repository.
         Tags remain editable. Sealing cannot be reversed."""
         ...
 
@@ -2973,7 +3039,8 @@ class _AsyncExecuteMixin:
     ) -> outputs.Empty:
         """Schedule or cancel automatic deletion. Requires permission to manage versions.
         Deletion removes the version and all tags, including locked tags. It does not
-        check device installations. Unused assets follow the repository cleanup policy."""
+        check device installations. Unused assets follow the repository cleanup policy.
+        A version that is the base of another version cannot be scheduled."""
         ...
 
     @overload
@@ -2981,6 +3048,17 @@ class _AsyncExecuteMixin:
         self, action: repositories.SetPackageVersionNameAction
     ) -> outputs.Empty:
         """Set the name of a package version."""
+        ...
+
+    @overload
+    async def execute(
+        self, action: repositories.SetPackageVersionBaseAction
+    ) -> outputs.Empty:
+        """Set or clear the base of a package version. Requires permission to manage versions.
+
+        The base must belong to the same package, must not be scheduled for deletion, and
+        must not lead back to the version through its own bases. Sealed versions reject
+        changes to their base."""
         ...
 
     @overload
